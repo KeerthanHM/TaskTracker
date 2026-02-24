@@ -1,13 +1,12 @@
 import Sidebar from "@/components/Sidebar";
 import TaskTableClient from "@/components/TaskTableClient";
 import { getWorkspaces } from "@/actions/workspaces";
-import { auth } from "@/auth";
+import { auth, signIn } from "@/auth";
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ workspaceId?: string }> }) {
   const session = await auth();
 
   if (!session?.user) {
-    const { signIn } = await import("@/auth");
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full">
         <div style={{ maxWidth: 400, width: "100%", padding: "40px", backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", textAlign: "center" }}>
