@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { CheckCircle2, Circle, ChevronDown, Plus, User, Star } from "lucide-react";
-import { createTask, updateTaskStatus, updateTaskPriority, updateTaskAssignee } from "@/actions/tasks";
+import { useState, useTransition, useRef } from "react";
+import { CheckCircle2, Circle, Plus, User, Star, Trash2 } from "lucide-react";
+import { createTask, updateTaskStatus, updateTaskPriority, updateTaskAssignee, deleteTask, updateTaskDescription } from "@/actions/tasks";
 import { inviteMember } from "@/actions/workspaces";
 
 export default function TaskTableClient({ workspace, tasks, members, currentUser }: any) {
@@ -29,6 +29,20 @@ export default function TaskTableClient({ workspace, tasks, members, currentUser
     const handleAssigneeChange = (taskId: string, assigneeId: string) => {
         startTransition(() => {
             updateTaskAssignee(taskId, assigneeId === "unassigned" ? null : assigneeId);
+        });
+    };
+
+    const handleDeleteTask = (taskId: string) => {
+        if (confirm("Are you sure you want to delete this task?")) {
+            startTransition(() => {
+                deleteTask(taskId);
+            });
+        }
+    };
+
+    const handleDescriptionChange = (taskId: string, description: string) => {
+        startTransition(() => {
+            updateTaskDescription(taskId, description);
         });
     };
 
@@ -92,10 +106,12 @@ export default function TaskTableClient({ workspace, tasks, members, currentUser
                 <table style={{ opacity: isPending ? 0.6 : 1, transition: "opacity var(--transition-fast)" }}>
                     <thead>
                         <tr>
-                            <th style={{ width: "35%" }}>Task name</th>
-                            <th style={{ width: "20%" }}>Status</th>
-                            <th style={{ width: "25%" }}>Assignee</th>
-                            <th style={{ width: "20%" }}>Priority</th>
+                            <th style={{ width: "25%" }}>Task name</th>
+                            <th style={{ width: "25%" }}>Description</th>
+                            <th style={{ width: "15%" }}>Status</th>
+                            <th style={{ width: "15%" }}>Assignee</th>
+                            <th style={{ width: "15%" }}>Priority</th>
+                            <th style={{ width: "5%" }}></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -160,11 +176,22 @@ export default function TaskTableClient({ workspace, tasks, members, currentUser
                                         <option value="High" style={{ background: "var(--bg-panel)", color: "white" }}>High</option>
                                     </select>
                                 </td>
+                                <td style={{ textAlign: "right" }}>
+                                    <button
+                                        onClick={() => handleDeleteTask(t.id)}
+                                        style={{ color: "var(--text-secondary)", padding: "4px", borderRadius: "var(--radius-sm)", cursor: "pointer", transition: "all var(--transition-fast)" }}
+                                        onMouseOver={e => { e.currentTarget.style.color = "var(--accent-danger)"; e.currentTarget.style.backgroundColor = "var(--badge-high-bg)"; }}
+                                        onMouseOut={e => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.backgroundColor = "transparent"; }}
+                                        title="Delete task"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                         {filteredTasks.length === 0 && (
                             <tr>
-                                <td colSpan={4} style={{ textAlign: "center", padding: "32px", color: "var(--text-secondary)" }}>
+                                <td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "var(--text-secondary)" }}>
                                     No tasks found. Create a new task to get started!
                                 </td>
                             </tr>

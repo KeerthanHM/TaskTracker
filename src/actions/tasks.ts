@@ -65,3 +65,26 @@ export async function updateTaskAssignee(taskId: string, assigneeId: string | nu
 
     revalidatePath("/")
 }
+
+export async function deleteTask(taskId: string) {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    await prisma.task.delete({
+        where: { id: taskId }
+    })
+
+    revalidatePath("/")
+}
+
+export async function updateTaskDescription(taskId: string, description: string) {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    await prisma.task.update({
+        where: { id: taskId },
+        data: { description }
+    })
+
+    revalidatePath("/")
+}
