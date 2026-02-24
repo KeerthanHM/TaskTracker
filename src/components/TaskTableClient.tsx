@@ -36,6 +36,16 @@ function Dashboard({ allTasks }: { allTasks: any[] }) {
     const labelStyle: React.CSSProperties = { fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" };
     const valueStyle: React.CSSProperties = { fontSize: "1.75rem", fontWeight: 700 };
 
+    if (total === 0) {
+        return (
+            <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-secondary)" }}>
+                <BarChart3 size={48} style={{ margin: "0 auto 16px", opacity: 0.5 }} />
+                <h3 style={{ fontSize: "1.2rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "8px" }}>No data yet</h3>
+                <p>Create some tasks to see your workspace statistics.</p>
+            </div>
+        );
+    }
+
     return (
         <div style={{ marginBottom: "32px" }}>
             <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
