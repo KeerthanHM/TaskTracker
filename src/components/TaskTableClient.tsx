@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useOptimistic, startTransition as reactStartTransition } from "react";
+import { useState, useTransition, useRef, useOptimistic, startTransition as reactStartTransition, Fragment } from "react";
 import { CheckCircle2, Circle, Plus, User, Star, Trash2, GripVertical, ChevronRight, ChevronDown, BarChart3, CircleDashed } from "lucide-react";
 import { createTask, updateTaskStatus, updateTaskPriority, updateTaskAssignee, deleteTask, updateTaskDescription, reorderTasks } from "@/actions/tasks";
 import { inviteMember } from "@/actions/workspaces";
@@ -505,7 +505,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                         </thead>
                         <tbody>
                             {filteredTasks.map((t: any) => (
-                                <>{renderTaskRow(t)}{expandedTasks.has(t.id) && t.subtasks?.map((sub: any) => renderTaskRow(sub, true))}{expandedTasks.has(t.id) && (
+                                <Fragment key={t.id}>{renderTaskRow(t)}{expandedTasks.has(t.id) && t.subtasks?.map((sub: any) => renderTaskRow(sub, true))}{expandedTasks.has(t.id) && (
                                     <tr key={`add-sub-${t.id}`}>
                                         <td colSpan={6} style={{ paddingLeft: "48px" }}>
                                             <button onClick={() => handleNewTask(t.id)} style={{ color: "var(--text-secondary)", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "4px" }} onMouseOver={e => e.currentTarget.style.color = "var(--text-primary)"} onMouseOut={e => e.currentTarget.style.color = "var(--text-secondary)"}>
@@ -513,7 +513,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                                             </button>
                                         </td>
                                     </tr>
-                                )}</>
+                                )}</Fragment>
                             ))}
                             {filteredTasks.length === 0 && (
                                 <tr><td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "var(--text-secondary)" }}>No tasks found. Create a new task to get started!</td></tr>

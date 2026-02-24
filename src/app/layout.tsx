@@ -3,8 +3,15 @@ import "./globals.css";
 import SessionWrapper from "@/components/SessionWrapper";
 
 export const metadata: Metadata = {
-  title: "Tasks Tracker",
-  description: "Stay organized with tasks, your way.",
+  title: "Tasks Tracker — Stay organized with tasks, your way",
+  description: "A modern, real-time task management app with workspaces, team availability, subtasks, and optimistic UI. Built by Keerthan H M.",
+  keywords: ["task tracker", "project management", "team collaboration", "workspace", "productivity"],
+  openGraph: {
+    title: "Tasks Tracker",
+    description: "Stay organized with tasks, your way.",
+    type: "website",
+    url: "https://taskstracker.online",
+  },
 };
 
 export default function RootLayout({

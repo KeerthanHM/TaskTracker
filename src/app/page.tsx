@@ -1,6 +1,5 @@
 import Sidebar from "@/components/Sidebar";
 import TaskTableClient from "@/components/TaskTableClient";
-import { getWorkspaces } from "@/actions/workspaces";
 import { auth, signIn } from "@/auth";
 import prisma from "@/lib/prisma";
 
@@ -34,34 +33,55 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
     );
   }
 
-  // Default fallback values
-  let workspaces: any[] = [];
+  const userId = session.user.id!;
+
+  // Single Prisma call: fetch user + their workspace memberships in parallel
+  const [dbUser, memberships] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.workspaceMember.findMany({
+      where: { userId },
+      include: { workspace: true }
+    })
+  ]);
+
+  const workspaces = memberships.map(m => m.workspace);
+
+  const sp = await searchParams;
+  const workspaceId = sp?.workspaceId || workspaces[0]?.id;
+
   let workspace = null;
-  let fallbackId = undefined;
-  let dbUser = null;
-
-  if (session?.user) {
-    dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
-    workspaces = await getWorkspaces();
-
-    // Wait for searchParams to resolve
-    const sp = await searchParams;
-    const workspaceId = sp?.workspaceId || workspaces[0]?.id;
-
-    if (workspaceId) {
-      // we have a workspace ID, fetch the workspace data
-      const { getWorkspace } = await import("@/actions/workspaces");
-      workspace = await getWorkspace(workspaceId);
-      fallbackId = workspaceId;
-    }
+  if (workspaceId) {
+    // Verify membership and fetch workspace data
+    const membership = await prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId } },
+      include: {
+        workspace: {
+          include: {
+            members: { include: { user: true } },
+            tasks: {
+              where: { parentId: null },
+              include: {
+                assignee: true,
+                subtasks: {
+                  include: { assignee: true },
+                  orderBy: { sortOrder: 'asc' }
+                }
+              },
+              orderBy: { sortOrder: 'asc' }
+            }
+          }
+        }
+      }
+    });
+    workspace = membership?.workspace || null;
   }
 
   return (
     <div className="app-container">
       <Sidebar
         workspaces={workspaces}
-        activeWorkspaceId={fallbackId}
-        user={dbUser || session?.user}
+        activeWorkspaceId={workspaceId}
+        user={dbUser || session.user}
       />
       <main className="main-content">
         {workspace ? (
@@ -69,7 +89,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
             workspace={workspace}
             tasks={workspace.tasks}
             members={workspace.members.map((m: any) => m.user)}
-            currentUser={dbUser || session?.user}
+            currentUser={dbUser || session.user}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-secondary">
