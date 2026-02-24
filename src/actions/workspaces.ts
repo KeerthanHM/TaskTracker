@@ -52,7 +52,17 @@ export async function getWorkspace(id: string) {
             workspace: {
                 include: {
                     members: { include: { user: true } },
-                    tasks: { include: { assignee: true }, orderBy: { createdAt: 'desc' } }
+                    tasks: {
+                        where: { parentId: null },
+                        include: {
+                            assignee: true,
+                            subtasks: {
+                                include: { assignee: true },
+                                orderBy: { sortOrder: 'asc' }
+                            }
+                        },
+                        orderBy: { sortOrder: 'asc' }
+                    }
                 }
             }
         }

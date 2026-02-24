@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Folder, LogOut, Plus, Settings, User } from "lucide-react";
+import { Folder, LogOut, Plus } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { createWorkspace } from "@/actions/workspaces";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
 
@@ -19,9 +20,18 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
 
             {/* User Profile Area */}
             <div className="flex items-center gap-3" style={{ marginBottom: "32px", padding: "8px", borderRadius: "var(--radius-md)" }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--accent-color)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 600 }}>
-                    {user?.name?.charAt(0).toUpperCase() || "U"}
-                </div>
+                {user?.image ? (
+                    <img
+                        src={user.image}
+                        alt={user.name || "User"}
+                        style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }}
+                        referrerPolicy="no-referrer"
+                    />
+                ) : (
+                    <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--accent-color)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 600, fontSize: "0.85rem" }}>
+                        {user?.name?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                )}
                 <div style={{ flex: 1, overflow: "hidden" }}>
                     <div style={{ fontWeight: 600, fontSize: "0.9rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{user?.name}</div>
                     <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{user?.email}</div>
@@ -43,7 +53,7 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
                             display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px",
                             borderRadius: "var(--radius-md)", marginBottom: "4px",
                             backgroundColor: isActive ? "var(--bg-hover)" : "transparent",
-                            color: isActive ? "white" : "var(--text-secondary)",
+                            color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
                             fontWeight: isActive ? 500 : 400,
                             transition: "background-color var(--transition-fast)"
                         }}>
@@ -59,7 +69,8 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
                 )}
             </div>
 
-            <div style={{ marginTop: "auto", borderTop: "1px solid var(--border-subtle)", paddingTop: "16px" }}>
+            <div style={{ marginTop: "auto", borderTop: "1px solid var(--border-subtle)", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                <ThemeToggle />
                 <button onClick={() => signOut()} style={{
                     display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px",
                     borderRadius: "var(--radius-md)", width: "100%", color: "var(--text-secondary)",

@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-:root {
+/* =========== DARK THEME (default) =========== */
+:root,
+[data-theme="dark"] {
   --bg-dark: #111111;
   --bg-sidebar: #171717;
   --bg-panel: #1e1e1e;
@@ -9,12 +11,11 @@
   --text-secondary: #a1a1aa;
   --border-color: #333333;
   --border-subtle: #272727;
-  
+
   --accent-color: #3b82f6;
   --accent-success: #10b981;
   --accent-danger: #ef4444;
 
-  /* Priority Styles */
   --badge-high-bg: rgba(239, 68, 68, 0.15);
   --badge-high-text: #ef4444;
   --badge-medium-bg: rgba(245, 158, 11, 0.15);
@@ -22,7 +23,6 @@
   --badge-low-bg: rgba(16, 185, 129, 0.15);
   --badge-low-text: #10b981;
 
-  /* Status Styles */
   --status-not-started: rgba(255, 255, 255, 0.1);
   --status-not-started-text: #a1a1aa;
   --status-in-progress: rgba(59, 130, 246, 0.2);
@@ -30,13 +30,56 @@
   --status-done: rgba(16, 185, 129, 0.2);
   --status-done-text: #34d399;
 
+  --dashboard-card-bg: #1e1e1e;
+  --dashboard-card-border: #333333;
+  --progress-bar-bg: #272727;
+
   --font-family: 'Inter', sans-serif;
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-full: 9999px;
-  
   --transition-fast: 150ms ease;
+}
+
+/* =========== LIGHT THEME =========== */
+[data-theme="light"] {
+  --bg-dark: #f5f5f5;
+  --bg-sidebar: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-hover: #f0f0f0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+  --border-color: #e5e5e5;
+  --border-subtle: #f0f0f0;
+
+  --accent-color: #3b82f6;
+  --accent-success: #10b981;
+  --accent-danger: #ef4444;
+
+  --badge-high-bg: rgba(239, 68, 68, 0.1);
+  --badge-high-text: #dc2626;
+  --badge-medium-bg: rgba(245, 158, 11, 0.1);
+  --badge-medium-text: #d97706;
+  --badge-low-bg: rgba(16, 185, 129, 0.1);
+  --badge-low-text: #059669;
+
+  --status-not-started: rgba(0, 0, 0, 0.05);
+  --status-not-started-text: #6b7280;
+  --status-in-progress: rgba(59, 130, 246, 0.1);
+  --status-in-progress-text: #2563eb;
+  --status-done: rgba(16, 185, 129, 0.1);
+  --status-done-text: #059669;
+
+  --dashboard-card-bg: #ffffff;
+  --dashboard-card-border: #e5e5e5;
+  --progress-bar-bg: #e5e5e5;
+}
+
+/* Light theme select option fix */
+[data-theme="light"] option {
+  background: #ffffff;
+  color: #1a1a1a;
 }
 
 * {
@@ -90,38 +133,105 @@ tr:hover td {
   transition: background-color var(--transition-fast);
 }
 
-input, select {
+input,
+select {
   font-family: inherit;
 }
 
-/* Beautiful custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: var(--radius-md);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
 
+/* Drag and drop */
+tr.dragging {
+  opacity: 0.4;
+}
+
+tr.drag-over td {
+  border-top: 2px solid var(--accent-color) !important;
+}
+
+/* Subtask row indent */
+.subtask-row td:first-child {
+  padding-left: 48px;
+}
+
 /* Utilities */
-.flex { display: flex; }
-.flex-col { display: flex; flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.gap-1 { gap: 0.25rem; }
-.gap-2 { gap: 0.5rem; }
-.gap-3 { gap: 0.75rem; }
-.gap-4 { gap: 1rem; }
-.w-full { width: 100%; }
-.h-full { height: 100%; }
-.text-sm { font-size: 0.875rem; }
-.text-xs { font-size: 0.75rem; }
-.text-secondary { color: var(--text-secondary); }
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-1 {
+  gap: 0.25rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.h-screen {
+  min-height: 100vh;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
