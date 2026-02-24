@@ -124,6 +124,29 @@ export default function TaskTableClient({ workspace, tasks, members, currentUser
                                     </div>
                                 </td>
                                 <td>
+                                    <input
+                                        type="text"
+                                        defaultValue={t.description || ""}
+                                        placeholder="Add description…"
+                                        onBlur={e => {
+                                            if (e.target.value !== (t.description || "")) {
+                                                handleDescriptionChange(t.id, e.target.value);
+                                            }
+                                        }}
+                                        style={{
+                                            background: "transparent",
+                                            border: "none",
+                                            outline: "none",
+                                            color: t.description ? "var(--text-primary)" : "var(--text-secondary)",
+                                            fontSize: "0.85rem",
+                                            width: "100%",
+                                            cursor: "text",
+                                            padding: "4px 0",
+                                        }}
+                                        onFocus={e => e.currentTarget.style.color = "var(--text-primary)"}
+                                    />
+                                </td>
+                                <td>
                                     <select
                                         value={t.status}
                                         onChange={e => handleStatusChange(t.id, e.target.value)}
