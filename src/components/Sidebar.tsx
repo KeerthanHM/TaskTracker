@@ -1,21 +1,27 @@
 "use client";
 
+import { useState, useOptimistic, startTransition } from "react";
 import Link from "next/link";
-import { Folder, LogOut, Plus, Pencil, Check, X } from "lucide-react";
+import { Folder, LogOut, Plus, Pencil, Check, X, CircleDashed, Circle } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { createWorkspace } from "@/actions/workspaces";
-import { updateUserName } from "@/actions/user";
-import { useState, useOptimistic, startTransition } from "react";
+import { updateUserName, updateUserAvailability } from "@/actions/user";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(user?.name || "");
 
-    // Optimistic name — updates instantly in the sidebar
+    // Optimistic name
     const [optimisticName, setOptimisticName] = useOptimistic(
         user?.name || "",
         (_current: string, newName: string) => newName
+    );
+
+    // Optimistic availability
+    const [optimisticAvailability, setOptimisticAvailability] = useOptimistic(
+        user?.availability || "Available",
+        (_current: string, newAv: string) => newAv
     );
 
     const handleCreateWorkspace = async () => {
@@ -37,6 +43,33 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
     };
 
     const [isOpen, setIsOpen] = useState(false);
+
+    const handleAvailabilityChange = (newStatus: string) => {
+        if (newStatus === user?.availability) return;
+        startTransition(async () => {
+            setOptimisticAvailability(newStatus);
+            await updateUserAvailability(newStatus);
+        });
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "Available": return "var(--accent-success)";
+            case "Busy": return "var(--accent-danger)";
+            case "AFK": return "var(--badge-medium-text)";
+            default: return "var(--text-secondary)";
+        }
+    };
+
+    const StatusIcon = ({ status, size = 12 }: { status: string, size?: number }) => {
+        const color = getStatusColor(status);
+        switch (status) {
+            case "Available": return <Check size={size} color={color} />;
+            case "Busy": return <Circle size={size} color={color} fill={color} />;
+            case "AFK": return <CircleDashed size={size} color={color} strokeWidth={3} />;
+            default: return <Circle size={size} color={color} />;
+        }
+    };
 
     return (
         <>
@@ -73,7 +106,36 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
                                 <Pencil size={12} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
                             </div>
                         )}
-                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{user?.email}</div>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden", marginBottom: "4px" }}>{user?.email}</div>
+
+                        {/* Availability Selector */}
+                        <div className="flex items-center gap-1" style={{
+                            fontSize: "0.75rem",
+                            color: getStatusColor(optimisticAvailability),
+                            fontWeight: 500,
+                            position: "relative"
+                        }}>
+                            <StatusIcon status={optimisticAvailability} />
+                            <select
+                                value={optimisticAvailability}
+                                onChange={(e) => handleAvailabilityChange(e.target.value)}
+                                style={{
+                                    appearance: "none",
+                                    background: "transparent",
+                                    border: "none",
+                                    color: "inherit",
+                                    fontWeight: "inherit",
+                                    cursor: "pointer",
+                                    outline: "none",
+                                    padding: 0,
+                                    margin: 0
+                                }}
+                            >
+                                <option value="Available" style={{ color: "var(--text-primary)" }}>Available</option>
+                                <option value="Busy" style={{ color: "var(--text-primary)" }}>Busy</option>
+                                <option value="AFK" style={{ color: "var(--text-primary)" }}>AFK</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 

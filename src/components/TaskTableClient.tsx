@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef, useOptimistic, startTransition as reactStartTransition } from "react";
-import { CheckCircle2, Circle, Plus, User, Star, Trash2, GripVertical, ChevronRight, ChevronDown, BarChart3 } from "lucide-react";
+import { CheckCircle2, Circle, Plus, User, Star, Trash2, GripVertical, ChevronRight, ChevronDown, BarChart3, CircleDashed } from "lucide-react";
 import { createTask, updateTaskStatus, updateTaskPriority, updateTaskAssignee, deleteTask, updateTaskDescription, reorderTasks } from "@/actions/tasks";
 import { inviteMember } from "@/actions/workspaces";
 
@@ -408,7 +408,17 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         { name: "All Tasks", icon: Star },
         { name: "My Tasks", icon: User },
         { name: "Dashboard", icon: BarChart3 },
+        { name: "Availability", icon: CircleDashed },
     ];
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "Available": return "var(--accent-success)";
+            case "Busy": return "var(--accent-danger)";
+            case "AFK": return "var(--badge-medium-text)";
+            default: return "var(--text-secondary)";
+        }
+    };
 
     return (
         <div style={{ paddingBottom: "100px" }}>
@@ -440,7 +450,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                         );
                     })}
                 </div>
-                {activeTab !== "Dashboard" && (
+                {(activeTab === "All Tasks" || activeTab === "My Tasks") && (
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={handleAddMember} style={{ padding: "8px 16px", backgroundColor: "var(--border-color)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.backgroundColor = "var(--border-subtle)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "var(--border-color)"}>
                             Invite Member
@@ -454,7 +464,33 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
 
             {activeTab === "Dashboard" && <Dashboard allTasks={allTasksFlat} />}
 
-            {activeTab !== "Dashboard" && (
+            {activeTab === "Availability" && (
+                <div style={{ backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
+                    <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-color)" }}>
+                        <h2 style={{ fontSize: "1.1rem", fontWeight: 600 }}>Team Availability</h2>
+                        <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginTop: "4px" }}>See who's online and available right now.</p>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", padding: "24px" }}>
+                        {members.map((m: any) => {
+                            const statusColor = getStatusColor(m.availability || "Available");
+                            return (
+                                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px", backgroundColor: "var(--bg-dark)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)" }}>
+                                    <div style={{ position: "relative" }}>
+                                        <UserAvatar user={m} size={40} />
+                                        <div style={{ position: "absolute", bottom: -2, right: -2, width: 14, height: 14, borderRadius: "50%", backgroundColor: statusColor, border: "2.5px solid var(--bg-dark)" }} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 600, fontSize: "0.95rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
+                                        <div style={{ fontSize: "0.8rem", color: statusColor, fontWeight: 500 }}>{m.availability || "Available"}</div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {(activeTab === "All Tasks" || activeTab === "My Tasks") && (
                 <div className="task-table-container" style={{ backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
                     <table>
                         <thead>
