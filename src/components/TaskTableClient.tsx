@@ -295,35 +295,38 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         return (
             <tr
                 key={t.id}
+                className={isSubtask ? "subtask-row" : ""}
                 draggable={!isSubtask}
                 onDragStart={() => !isSubtask && handleDragStart(t.id)}
                 onDragOver={(e) => !isSubtask && handleDragOver(e, t.id)}
                 onDrop={() => !isSubtask && handleDrop()}
             >
-                <td style={{ fontWeight: 500, paddingLeft: isSubtask ? "48px" : undefined }}>
-                    <div className="flex items-center gap-2">
+                <td data-label="Task" style={{ fontWeight: 500, paddingLeft: isSubtask ? "48px" : undefined }}>
+                    <div className="flex items-center gap-2 w-full">
                         {!isSubtask && (
-                            <span style={{ cursor: "grab", color: "var(--text-secondary)", display: "flex" }}>
+                            <span style={{ cursor: "grab", color: "var(--text-secondary)", display: "flex", flexShrink: 0 }}>
                                 <GripVertical size={16} />
                             </span>
                         )}
                         {hasSubtasks && !isSubtask ? (
-                            <button onClick={() => toggleExpand(t.id)} style={{ display: "flex", color: "var(--text-secondary)" }}>
+                            <button onClick={() => toggleExpand(t.id)} style={{ display: "flex", color: "var(--text-secondary)", flexShrink: 0 }}>
                                 {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                             </button>
                         ) : (
-                            <span style={{ width: isSubtask ? 0 : 16 }} />
+                            <span style={{ width: isSubtask ? 0 : 16, flexShrink: 0 }} />
                         )}
-                        {t.status === "Done" ? <CheckCircle2 size={18} color="var(--accent-success)" /> : <Circle size={18} color="var(--text-secondary)" />}
-                        <span>{t.title}</span>
+                        <span style={{ flexShrink: 0, display: 'flex' }}>
+                            {t.status === "Done" ? <CheckCircle2 size={18} color="var(--accent-success)" /> : <Circle size={18} color="var(--text-secondary)" />}
+                        </span>
+                        <span className="truncate" style={{ flex: 1 }}>{t.title}</span>
                         {hasSubtasks && !isSubtask && (
-                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", backgroundColor: "var(--bg-hover)", padding: "2px 6px", borderRadius: "var(--radius-full)", marginLeft: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", backgroundColor: "var(--bg-hover)", padding: "2px 6px", borderRadius: "var(--radius-full)", marginLeft: "4px", flexShrink: 0 }}>
                                 {subtasksDone}/{t.subtasks.length}
                             </span>
                         )}
                     </div>
                 </td>
-                <td>
+                <td data-label="Description">
                     <input
                         type="text" defaultValue={t.description || ""} placeholder="Add description…"
                         onBlur={e => { if (e.target.value !== (t.description || "")) handleDescriptionChange(t.id, e.target.value); }}
@@ -331,14 +334,14 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                         onFocus={e => e.currentTarget.style.color = "var(--text-primary)"}
                     />
                 </td>
-                <td>
+                <td data-label="Status">
                     <select value={t.status} onChange={e => handleStatusChange(t.id, e.target.value)} style={statusStyle(t.status)}>
                         <option value="Not started">Not started</option>
                         <option value="In progress">In progress</option>
                         <option value="Done">Done</option>
                     </select>
                 </td>
-                <td>
+                <td data-label="Assignee">
                     <div className="flex items-center gap-2">
                         {t.assignee && <UserAvatar user={t.assignee} size={22} />}
                         <select
@@ -355,7 +358,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                         </select>
                     </div>
                 </td>
-                <td>
+                <td data-label="Priority">
                     <select value={t.priority || "None"} onChange={e => handlePriorityChange(t.id, e.target.value)} style={priorityStyle(t.priority)}>
                         <option value="None">Set priority</option>
                         <option value="Low">Low</option>
@@ -363,7 +366,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                         <option value="High">High</option>
                     </select>
                 </td>
-                <td style={{ textAlign: "right" }}>
+                <td data-label="Actions" style={{ textAlign: "right" }}>
                     <div className="flex items-center gap-1" style={{ justifyContent: "flex-end" }}>
                         {!isSubtask && (
                             <button
@@ -409,14 +412,14 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem" }}>Stay organized with tasks, your way.</p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "12px", borderBottom: "1px solid var(--border-color)" }}>
+            <div className="header-actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "12px", borderBottom: "1px solid var(--border-color)" }}>
                 <div style={{ display: "flex", gap: "24px" }}>
                     {tabs.map(tab => {
                         const isActive = activeTab === tab.name;
                         const Icon = tab.icon;
                         return (
                             <button key={tab.name} onClick={() => setActiveTab(tab.name)} style={{
-                                display: "flex", alignItems: "center", gap: "8px",
+                                display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap",
                                 color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
                                 fontWeight: isActive ? 600 : 400, paddingBottom: "12px", marginBottom: "-13px",
                                 borderBottom: isActive ? "2px solid var(--text-primary)" : "2px solid transparent",
@@ -428,11 +431,11 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                     })}
                 </div>
                 {activeTab !== "Dashboard" && (
-                    <div>
-                        <button onClick={handleAddMember} style={{ padding: "8px 16px", backgroundColor: "var(--border-color)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 500, marginRight: "12px", cursor: "pointer" }} onMouseOver={e => e.currentTarget.style.backgroundColor = "var(--border-subtle)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "var(--border-color)"}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={handleAddMember} style={{ padding: "8px 16px", backgroundColor: "var(--border-color)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.backgroundColor = "var(--border-subtle)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "var(--border-color)"}>
                             Invite Member
                         </button>
-                        <button onClick={() => handleNewTask()} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", backgroundColor: "var(--accent-color)", borderRadius: "var(--radius-md)", color: "white", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer" }} onMouseOver={e => e.currentTarget.style.opacity = "0.9"} onMouseOut={e => e.currentTarget.style.opacity = "1"}>
+                        <button onClick={() => handleNewTask()} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", backgroundColor: "var(--accent-color)", borderRadius: "var(--radius-md)", color: "white", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.opacity = "0.9"} onMouseOut={e => e.currentTarget.style.opacity = "1"}>
                             <Plus size={16} /> New
                         </button>
                     </div>
@@ -442,7 +445,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
             {activeTab === "Dashboard" && <Dashboard allTasks={allTasksFlat} />}
 
             {activeTab !== "Dashboard" && (
-                <div style={{ backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", overflow: "hidden", border: "1px solid var(--border-color)" }}>
+                <div className="task-table-container" style={{ backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
                     <table>
                         <thead>
                             <tr>
