@@ -1,12 +1,93 @@
 "use client";
 
-import { useState, useTransition, useRef, useOptimistic, startTransition as reactStartTransition, Fragment } from "react";
-import { CheckCircle2, Circle, Plus, User, Star, Trash2, GripVertical, ChevronRight, ChevronDown, BarChart3, CircleDashed } from "lucide-react";
+import { useState, useRef, useOptimistic, startTransition as reactStartTransition, Fragment, useCallback } from "react";
+import { CheckCircle2, Circle, Plus, User, Star, Trash2, GripVertical, ChevronRight, ChevronDown, BarChart3, CircleDashed, X, AlertCircle } from "lucide-react";
 import { createTask, updateTaskStatus, updateTaskPriority, updateTaskAssignee, deleteTask, updateTaskDescription, reorderTasks } from "@/actions/tasks";
 import { inviteMember } from "@/actions/workspaces";
 
-// Avatar helper
-function UserAvatar({ user, size = 24 }: { user: any; size?: number }) {
+// ─── Types ─────────────────────────────────────────────
+interface TaskUser {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+    availability?: string;
+}
+
+interface Task {
+    id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    priority: string | null;
+    assigneeId: string | null;
+    assignee: TaskUser | null;
+    subtasks?: Task[];
+    parentId: string | null;
+    sortOrder: number;
+}
+
+interface Workspace {
+    id: string;
+    name: string;
+    tasks: Task[];
+    members: { user: TaskUser }[];
+}
+
+interface TaskTableProps {
+    workspace: any;
+    tasks: Task[];
+    members: TaskUser[];
+    currentUser: any;
+}
+
+// ─── Toast Notification System ──────────────────────────
+function Toast({ message, type, onClose }: { message: string; type: "error" | "success"; onClose: () => void }) {
+    return (
+        <div style={{
+            position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+            display: "flex", alignItems: "center", gap: "10px",
+            padding: "14px 20px", borderRadius: "var(--radius-md)",
+            backgroundColor: type === "error" ? "var(--badge-high-bg)" : "var(--status-done)",
+            color: type === "error" ? "var(--badge-high-text)" : "var(--status-done-text)",
+            border: `1px solid ${type === "error" ? "var(--accent-danger)" : "var(--accent-success)"}`,
+            fontSize: "0.9rem", fontWeight: 500,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+            animation: "slideIn 0.3s ease-out"
+        }}>
+            <AlertCircle size={18} />
+            <span>{message}</span>
+            <button onClick={onClose} style={{ marginLeft: "8px", cursor: "pointer", opacity: 0.7 }}><X size={14} /></button>
+        </div>
+    );
+}
+
+// ─── Modal Component ────────────────────────────────────
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+    return (
+        <div style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)"
+        }} onClick={onClose}>
+            <div onClick={e => e.stopPropagation()} style={{
+                width: "100%", maxWidth: 420, padding: "28px",
+                backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)",
+                border: "1px solid var(--border-color)",
+                boxShadow: "0 24px 48px rgba(0,0,0,0.4)"
+            }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: "20px" }}>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: 600 }}>{title}</h3>
+                    <button onClick={onClose} style={{ color: "var(--text-secondary)", cursor: "pointer" }}><X size={18} /></button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+}
+
+// ─── Avatar Helper ──────────────────────────────────────
+function UserAvatar({ user, size = 24 }: { user: TaskUser | null; size?: number }) {
     if (user?.image) {
         return <img src={user.image} alt={user.name || ""} referrerPolicy="no-referrer" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover" }} />;
     }
@@ -17,16 +98,15 @@ function UserAvatar({ user, size = 24 }: { user: any; size?: number }) {
     );
 }
 
-// Dashboard component
-function Dashboard({ allTasks }: { allTasks: any[] }) {
+// ─── Dashboard Component ────────────────────────────────
+function Dashboard({ allTasks }: { allTasks: Task[] }) {
     const total = allTasks.length;
-    const done = allTasks.filter((t: any) => t.status === "Done").length;
-    const inProgress = allTasks.filter((t: any) => t.status === "In progress").length;
-    const notStarted = allTasks.filter((t: any) => t.status === "Not started").length;
-    const high = allTasks.filter((t: any) => t.priority === "High").length;
-    const medium = allTasks.filter((t: any) => t.priority === "Medium").length;
-    const low = allTasks.filter((t: any) => t.priority === "Low").length;
+    const done = allTasks.filter(t => t.status === "Done").length;
+    const inProgress = allTasks.filter(t => t.status === "In progress").length;
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const high = allTasks.filter(t => t.priority === "High").length;
+    const medium = allTasks.filter(t => t.priority === "Medium").length;
+    const low = allTasks.filter(t => t.priority === "Low").length;
 
     const cardStyle: React.CSSProperties = {
         flex: 1, padding: "20px", borderRadius: "var(--radius-lg)",
@@ -105,23 +185,23 @@ function Dashboard({ allTasks }: { allTasks: any[] }) {
     );
 }
 
-// Optimistic reducer for tasks
+// ─── Optimistic Reducer ─────────────────────────────────
 type TaskAction =
     | { type: "updateStatus"; taskId: string; status: string }
     | { type: "updatePriority"; taskId: string; priority: string | null }
-    | { type: "updateAssignee"; taskId: string; assigneeId: string | null; assignee: any }
+    | { type: "updateAssignee"; taskId: string; assigneeId: string | null; assignee: TaskUser | null }
     | { type: "updateDescription"; taskId: string; description: string }
     | { type: "delete"; taskId: string }
     | { type: "reorder"; taskIds: string[] }
-    | { type: "addTask"; task: any }
-    | { type: "addSubtask"; parentId: string; task: any };
+    | { type: "addTask"; task: Task }
+    | { type: "addSubtask"; parentId: string; task: Task };
 
-function applyOptimisticUpdate(tasks: any[], action: TaskAction): any[] {
-    const updateInTasks = (list: any[], fn: (t: any) => any): any[] =>
+function applyOptimisticUpdate(tasks: Task[], action: TaskAction): Task[] {
+    const updateInTasks = (list: Task[], fn: (t: Task) => Task): Task[] =>
         list.map(t => {
             const updated = fn(t);
             if (updated.subtasks) {
-                updated.subtasks = updated.subtasks.map((s: any) => fn(s));
+                updated.subtasks = updated.subtasks.map(s => fn(s));
             }
             return updated;
         });
@@ -140,11 +220,11 @@ function applyOptimisticUpdate(tasks: any[], action: TaskAction): any[] {
                 .filter(t => t.id !== action.taskId)
                 .map(t => ({
                     ...t,
-                    subtasks: t.subtasks ? t.subtasks.filter((s: any) => s.id !== action.taskId) : []
+                    subtasks: t.subtasks ? t.subtasks.filter(s => s.id !== action.taskId) : []
                 }));
         case "reorder": {
             const taskMap = new Map(tasks.map(t => [t.id, t]));
-            return action.taskIds.map(id => taskMap.get(id)).filter(Boolean);
+            return action.taskIds.map(id => taskMap.get(id)).filter((t): t is Task => !!t);
         }
         case "addTask":
             return [...tasks, action.task];
@@ -159,19 +239,35 @@ function applyOptimisticUpdate(tasks: any[], action: TaskAction): any[] {
     }
 }
 
-export default function TaskTableClient({ workspace, tasks: serverTasks, members, currentUser }: any) {
+// ─── Main Component ─────────────────────────────────────
+export default function TaskTableClient({ workspace, tasks: serverTasks, members, currentUser }: TaskTableProps) {
     const [activeTab, setActiveTab] = useState("All Tasks");
     const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
     const dragItem = useRef<string | null>(null);
     const dragOverItem = useRef<string | null>(null);
 
+    // Modal states
+    const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+    const [newTaskTitle, setNewTaskTitle] = useState("");
+    const [newTaskParentId, setNewTaskParentId] = useState<string | undefined>(undefined);
+    const [inviteEmail, setInviteEmail] = useState("");
+
+    // Toast state
+    const [toast, setToast] = useState<{ message: string; type: "error" | "success" } | null>(null);
+    const showToast = useCallback((message: string, type: "error" | "success" = "error") => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    }, []);
+
     // Optimistic state
     const [optimisticTasks, addOptimistic] = useOptimistic(serverTasks, applyOptimisticUpdate);
 
     // Flatten for dashboard
-    const allTasksFlat = optimisticTasks.flatMap((t: any) => [t, ...(t.subtasks || [])]);
+    const allTasksFlat = optimisticTasks.flatMap(t => [t, ...(t.subtasks || [])]);
 
-    const filteredTasks = optimisticTasks.filter((t: any) => {
+    const filteredTasks = optimisticTasks.filter(t => {
         if (activeTab === "My Tasks") return t.assigneeId === currentUser?.id;
         return true;
     });
@@ -185,11 +281,12 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         });
     };
 
-    // Optimistic action handlers
+    // ─── Action Handlers (with error handling) ──────────
     const handleStatusChange = (taskId: string, status: string) => {
         reactStartTransition(async () => {
             addOptimistic({ type: "updateStatus", taskId, status });
-            await updateTaskStatus(taskId, status);
+            try { await updateTaskStatus(taskId, status); }
+            catch (e: any) { showToast(e.message || "Failed to update status"); }
         });
     };
 
@@ -197,38 +294,50 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         const val = priority === "None" ? null : priority;
         reactStartTransition(async () => {
             addOptimistic({ type: "updatePriority", taskId, priority: val });
-            await updateTaskPriority(taskId, (val ?? null) as any);
+            try { await updateTaskPriority(taskId, (val ?? null) as any); }
+            catch (e: any) { showToast(e.message || "Failed to update priority"); }
         });
     };
 
     const handleAssigneeChange = (taskId: string, assigneeId: string) => {
         const id = assigneeId === "unassigned" ? null : assigneeId;
-        const assignee = id ? members.find((m: any) => m.id === id) : null;
+        const assignee = id ? members.find(m => m.id === id) || null : null;
         reactStartTransition(async () => {
             addOptimistic({ type: "updateAssignee", taskId, assigneeId: id, assignee });
-            await updateTaskAssignee(taskId, id);
+            try { await updateTaskAssignee(taskId, id); }
+            catch (e: any) { showToast(e.message || "Failed to update assignee"); }
         });
     };
 
     const handleDeleteTask = (taskId: string) => {
-        if (!confirm("Are you sure you want to delete this task?")) return;
+        setShowDeleteConfirm(null);
         reactStartTransition(async () => {
             addOptimistic({ type: "delete", taskId });
-            await deleteTask(taskId);
+            try { await deleteTask(taskId); showToast("Task deleted", "success"); }
+            catch (e: any) { showToast(e.message || "Failed to delete task"); }
         });
     };
 
     const handleDescriptionChange = (taskId: string, description: string) => {
         reactStartTransition(async () => {
             addOptimistic({ type: "updateDescription", taskId, description });
-            await updateTaskDescription(taskId, description);
+            try { await updateTaskDescription(taskId, description); }
+            catch (e: any) { showToast(e.message || "Failed to update description"); }
         });
     };
 
     const handleNewTask = (parentId?: string) => {
-        const title = prompt(parentId ? "Enter subtask title:" : "Enter task title:");
+        setNewTaskParentId(parentId);
+        setNewTaskTitle("");
+        setShowNewTaskModal(true);
+    };
+
+    const submitNewTask = () => {
+        const title = newTaskTitle.trim();
         if (!title) return;
-        const tempTask = {
+        setShowNewTaskModal(false);
+
+        const tempTask: Task = {
             id: `temp-${Date.now()}`,
             title,
             description: null,
@@ -237,27 +346,35 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
             assigneeId: null,
             assignee: null,
             subtasks: [],
-            parentId: parentId || null,
+            parentId: newTaskParentId || null,
             sortOrder: 9999,
         };
         reactStartTransition(async () => {
-            if (parentId) {
-                addOptimistic({ type: "addSubtask", parentId, task: tempTask });
-                setExpandedTasks(prev => new Set(prev).add(parentId));
+            if (newTaskParentId) {
+                addOptimistic({ type: "addSubtask", parentId: newTaskParentId, task: tempTask });
+                setExpandedTasks(prev => new Set(prev).add(newTaskParentId));
             } else {
                 addOptimistic({ type: "addTask", task: tempTask });
             }
-            await createTask(workspace.id, { title, parentId });
+            try { await createTask(workspace.id, { title, parentId: newTaskParentId }); }
+            catch (e: any) { showToast(e.message || "Failed to create task"); }
         });
     };
 
-    const handleAddMember = () => {
-        const email = prompt("Enter member's email address:");
-        if (email) {
-            reactStartTransition(async () => {
-                try { await inviteMember(workspace.id, email); } catch (e: any) { alert(e.message); }
-            });
-        }
+    const handleInviteMember = () => {
+        const email = inviteEmail.trim();
+        if (!email) return;
+        setShowInviteModal(false);
+        setInviteEmail("");
+
+        reactStartTransition(async () => {
+            try {
+                await inviteMember(workspace.id, email);
+                showToast(`Invited ${email} successfully!`, "success");
+            } catch (e: any) {
+                showToast(e.message || "Failed to invite member");
+            }
+        });
     };
 
     // Drag handlers
@@ -265,7 +382,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
     const handleDragOver = (e: React.DragEvent, taskId: string) => { e.preventDefault(); dragOverItem.current = taskId; };
     const handleDrop = () => {
         if (!dragItem.current || !dragOverItem.current || dragItem.current === dragOverItem.current) return;
-        const currentOrder = filteredTasks.map((t: any) => t.id);
+        const currentOrder = filteredTasks.map(t => t.id);
         const dragIdx = currentOrder.indexOf(dragItem.current);
         const dropIdx = currentOrder.indexOf(dragOverItem.current);
         if (dragIdx < 0 || dropIdx < 0) return;
@@ -273,13 +390,14 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         currentOrder.splice(dropIdx, 0, dragItem.current);
         reactStartTransition(async () => {
             addOptimistic({ type: "reorder", taskIds: currentOrder });
-            await reorderTasks(currentOrder);
+            try { await reorderTasks(currentOrder); }
+            catch (e: any) { showToast(e.message || "Failed to reorder tasks"); }
         });
         dragItem.current = null;
         dragOverItem.current = null;
     };
 
-    // Style helpers
+    // ─── Style Helpers ──────────────────────────────────
     const statusStyle = (status: string): React.CSSProperties => ({
         backgroundColor: "transparent",
         color: status === "Done" ? "var(--status-done-text)" : status === "In progress" ? "var(--status-in-progress-text)" : "var(--status-not-started-text)",
@@ -297,10 +415,29 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         outline: "none", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, appearance: "none" as const,
     });
 
-    const renderTaskRow = (t: any, isSubtask = false) => {
+    const inputStyle: React.CSSProperties = {
+        width: "100%", padding: "10px 14px", borderRadius: "var(--radius-md)",
+        border: "1px solid var(--border-color)", backgroundColor: "var(--bg-dark)",
+        color: "var(--text-primary)", fontSize: "0.95rem", outline: "none",
+    };
+
+    const btnPrimary: React.CSSProperties = {
+        padding: "10px 20px", borderRadius: "var(--radius-md)",
+        backgroundColor: "var(--accent-color)", color: "white",
+        fontWeight: 600, cursor: "pointer", fontSize: "0.9rem", border: "none"
+    };
+
+    const btnSecondary: React.CSSProperties = {
+        padding: "10px 20px", borderRadius: "var(--radius-md)",
+        backgroundColor: "var(--border-color)", color: "var(--text-primary)",
+        fontWeight: 500, cursor: "pointer", fontSize: "0.9rem", border: "none"
+    };
+
+    // ─── Render Task Row ────────────────────────────────
+    const renderTaskRow = (t: Task, isSubtask = false) => {
         const hasSubtasks = t.subtasks && t.subtasks.length > 0;
         const isExpanded = expandedTasks.has(t.id);
-        const subtasksDone = hasSubtasks ? t.subtasks.filter((s: any) => s.status === "Done").length : 0;
+        const subtasksDone = hasSubtasks ? t.subtasks!.filter(s => s.status === "Done").length : 0;
 
         return (
             <tr
@@ -331,7 +468,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                         <span className="truncate" style={{ flex: 1 }}>{t.title}</span>
                         {hasSubtasks && !isSubtask && (
                             <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", backgroundColor: "var(--bg-hover)", padding: "2px 6px", borderRadius: "var(--radius-full)", marginLeft: "4px", flexShrink: 0 }}>
-                                {subtasksDone}/{t.subtasks.length}
+                                {subtasksDone}/{t.subtasks!.length}
                             </span>
                         )}
                     </div>
@@ -362,7 +499,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                             onMouseOut={e => e.currentTarget.style.border = "1px solid transparent"}
                         >
                             <option value="unassigned">Unassigned</option>
-                            {members.map((m: any) => (
+                            {members.map(m => (
                                 <option key={m.id} value={m.id}>{m.name}</option>
                             ))}
                         </select>
@@ -390,7 +527,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                             </button>
                         )}
                         <button
-                            onClick={() => handleDeleteTask(t.id)}
+                            onClick={() => setShowDeleteConfirm(t.id)}
                             style={{ color: "var(--text-secondary)", padding: "4px", borderRadius: "var(--radius-sm)", cursor: "pointer", transition: "all var(--transition-fast)" }}
                             onMouseOver={e => { e.currentTarget.style.color = "var(--accent-danger)"; e.currentTarget.style.backgroundColor = "var(--badge-high-bg)"; }}
                             onMouseOut={e => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.backgroundColor = "transparent"; }}
@@ -420,8 +557,61 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         }
     };
 
+    // ─── Render ─────────────────────────────────────────
     return (
         <div style={{ paddingBottom: "100px" }}>
+            {/* Toast notification */}
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+            {/* New Task Modal */}
+            {showNewTaskModal && (
+                <Modal title={newTaskParentId ? "New Subtask" : "New Task"} onClose={() => setShowNewTaskModal(false)}>
+                    <input
+                        autoFocus
+                        placeholder={newTaskParentId ? "Enter subtask title…" : "Enter task title…"}
+                        value={newTaskTitle}
+                        onChange={e => setNewTaskTitle(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") submitNewTask(); if (e.key === "Escape") setShowNewTaskModal(false); }}
+                        style={inputStyle}
+                    />
+                    <div className="flex items-center gap-2" style={{ marginTop: "16px", justifyContent: "flex-end" }}>
+                        <button onClick={() => setShowNewTaskModal(false)} style={btnSecondary}>Cancel</button>
+                        <button onClick={submitNewTask} disabled={!newTaskTitle.trim()} style={{ ...btnPrimary, opacity: newTaskTitle.trim() ? 1 : 0.5 }}>Create</button>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Invite Modal */}
+            {showInviteModal && (
+                <Modal title="Invite Member" onClose={() => setShowInviteModal(false)}>
+                    <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "12px" }}>Enter the email of a registered user to invite them to this workspace.</p>
+                    <input
+                        autoFocus type="email"
+                        placeholder="colleague@example.com"
+                        value={inviteEmail}
+                        onChange={e => setInviteEmail(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") handleInviteMember(); if (e.key === "Escape") setShowInviteModal(false); }}
+                        style={inputStyle}
+                    />
+                    <div className="flex items-center gap-2" style={{ marginTop: "16px", justifyContent: "flex-end" }}>
+                        <button onClick={() => setShowInviteModal(false)} style={btnSecondary}>Cancel</button>
+                        <button onClick={handleInviteMember} disabled={!inviteEmail.trim()} style={{ ...btnPrimary, opacity: inviteEmail.trim() ? 1 : 0.5 }}>Invite</button>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <Modal title="Delete Task" onClose={() => setShowDeleteConfirm(null)}>
+                    <p style={{ color: "var(--text-secondary)", marginBottom: "20px" }}>Are you sure you want to delete this task? This action cannot be undone.</p>
+                    <div className="flex items-center gap-2" style={{ justifyContent: "flex-end" }}>
+                        <button onClick={() => setShowDeleteConfirm(null)} style={btnSecondary}>Cancel</button>
+                        <button onClick={() => handleDeleteTask(showDeleteConfirm)} style={{ ...btnPrimary, backgroundColor: "var(--accent-danger)" }}>Delete</button>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Header */}
             <div style={{ marginBottom: "32px" }}>
                 <h1 style={{ fontSize: "2rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
                     <div style={{ backgroundColor: "var(--accent-success)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -432,6 +622,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem" }}>Stay organized with tasks, your way.</p>
             </div>
 
+            {/* Tabs */}
             <div className="header-actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "12px", borderBottom: "1px solid var(--border-color)" }}>
                 <div style={{ display: "flex", gap: "24px" }}>
                     {tabs.map(tab => {
@@ -452,7 +643,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 </div>
                 {(activeTab === "All Tasks" || activeTab === "My Tasks") && (
                     <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={handleAddMember} style={{ padding: "8px 16px", backgroundColor: "var(--border-color)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.backgroundColor = "var(--border-subtle)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "var(--border-color)"}>
+                        <button onClick={() => setShowInviteModal(true)} style={{ padding: "8px 16px", backgroundColor: "var(--border-color)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.backgroundColor = "var(--border-subtle)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "var(--border-color)"}>
                             Invite Member
                         </button>
                         <button onClick={() => handleNewTask()} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "8px 16px", backgroundColor: "var(--accent-color)", borderRadius: "var(--radius-md)", color: "white", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.opacity = "0.9"} onMouseOut={e => e.currentTarget.style.opacity = "1"}>
@@ -462,16 +653,18 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 )}
             </div>
 
+            {/* Dashboard Tab */}
             {activeTab === "Dashboard" && <Dashboard allTasks={allTasksFlat} />}
 
+            {/* Availability Tab */}
             {activeTab === "Availability" && (
                 <div style={{ backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
                     <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-color)" }}>
                         <h2 style={{ fontSize: "1.1rem", fontWeight: 600 }}>Team Availability</h2>
-                        <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginTop: "4px" }}>See who's online and available right now.</p>
+                        <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginTop: "4px" }}>See who&apos;s online and available right now.</p>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", padding: "24px" }}>
-                        {members.map((m: any) => {
+                        {members.map(m => {
                             const statusColor = getStatusColor(m.availability || "Available");
                             return (
                                 <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px", backgroundColor: "var(--bg-dark)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)" }}>
@@ -490,6 +683,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 </div>
             )}
 
+            {/* Task Table */}
             {(activeTab === "All Tasks" || activeTab === "My Tasks") && (
                 <div className="task-table-container" style={{ backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
                     <table>
@@ -504,8 +698,8 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTasks.map((t: any) => (
-                                <Fragment key={t.id}>{renderTaskRow(t)}{expandedTasks.has(t.id) && t.subtasks?.map((sub: any) => renderTaskRow(sub, true))}{expandedTasks.has(t.id) && (
+                            {filteredTasks.map(t => (
+                                <Fragment key={t.id}>{renderTaskRow(t)}{expandedTasks.has(t.id) && t.subtasks?.map(sub => renderTaskRow(sub, true))}{expandedTasks.has(t.id) && (
                                     <tr key={`add-sub-${t.id}`}>
                                         <td colSpan={6} style={{ paddingLeft: "48px" }}>
                                             <button onClick={() => handleNewTask(t.id)} style={{ color: "var(--text-secondary)", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "4px" }} onMouseOver={e => e.currentTarget.style.color = "var(--text-primary)"} onMouseOut={e => e.currentTarget.style.color = "var(--text-secondary)"}>

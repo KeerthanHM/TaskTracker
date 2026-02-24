@@ -24,11 +24,16 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
         (_current: string, newAv: string) => newAv
     );
 
+    const [isOpen, setIsOpen] = useState(false);
+    const [showCreateWs, setShowCreateWs] = useState(false);
+    const [newWsName, setNewWsName] = useState("");
+
     const handleCreateWorkspace = async () => {
-        const name = prompt("Enter new workspace name:");
-        if (name) {
-            await createWorkspace(name);
-        }
+        const name = newWsName.trim();
+        if (!name) return;
+        setShowCreateWs(false);
+        setNewWsName("");
+        await createWorkspace(name);
     };
 
     const handleSaveName = () => {
@@ -42,7 +47,7 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
         setIsEditing(false);
     };
 
-    const [isOpen, setIsOpen] = useState(false);
+
 
     const handleAvailabilityChange = (newStatus: string) => {
         if (newStatus === user?.availability) return;
@@ -78,6 +83,29 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
             </button>
             <div className={`sidebar-overlay ${isOpen ? "open" : ""}`} onClick={() => setIsOpen(false)} />
             <div className={`sidebar ${isOpen ? "open" : ""}`}>
+
+                {/* Create Workspace Modal */}
+                {showCreateWs && (
+                    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} onClick={() => setShowCreateWs(false)}>
+                        <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 400, padding: "28px", backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", boxShadow: "0 24px 48px rgba(0,0,0,0.4)" }}>
+                            <div className="flex items-center justify-between" style={{ marginBottom: "20px" }}>
+                                <h3 style={{ fontSize: "1.1rem", fontWeight: 600 }}>New Workspace</h3>
+                                <button onClick={() => setShowCreateWs(false)} style={{ color: "var(--text-secondary)", cursor: "pointer" }}><X size={18} /></button>
+                            </div>
+                            <input
+                                autoFocus placeholder="Enter workspace name…"
+                                value={newWsName}
+                                onChange={e => setNewWsName(e.target.value)}
+                                onKeyDown={e => { if (e.key === "Enter") handleCreateWorkspace(); if (e.key === "Escape") setShowCreateWs(false); }}
+                                style={{ width: "100%", padding: "10px 14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", backgroundColor: "var(--bg-dark)", color: "var(--text-primary)", fontSize: "0.95rem", outline: "none" }}
+                            />
+                            <div className="flex items-center gap-2" style={{ marginTop: "16px", justifyContent: "flex-end" }}>
+                                <button onClick={() => setShowCreateWs(false)} style={{ padding: "10px 20px", borderRadius: "var(--radius-md)", backgroundColor: "var(--border-color)", color: "var(--text-primary)", fontWeight: 500, cursor: "pointer", fontSize: "0.9rem", border: "none" }}>Cancel</button>
+                                <button onClick={handleCreateWorkspace} disabled={!newWsName.trim()} style={{ padding: "10px 20px", borderRadius: "var(--radius-md)", backgroundColor: "var(--accent-color)", color: "white", fontWeight: 600, cursor: "pointer", fontSize: "0.9rem", border: "none", opacity: newWsName.trim() ? 1 : 0.5 }}>Create</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {/* User Profile Area */}
                 <div className="flex items-center gap-3" style={{ marginBottom: "32px", padding: "8px", borderRadius: "var(--radius-md)" }}>
                     {user?.image ? (
@@ -141,7 +169,7 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
 
                 <div className="flex items-center justify-between" style={{ padding: "0 8px", marginBottom: "16px", color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
                     <span>Workspaces</span>
-                    <button onClick={handleCreateWorkspace} style={{ color: "var(--text-secondary)", cursor: "pointer" }} title="New Workspace">
+                    <button onClick={() => setShowCreateWs(true)} style={{ color: "var(--text-secondary)", cursor: "pointer" }} title="New Workspace">
                         <Plus size={16} />
                     </button>
                 </div>
