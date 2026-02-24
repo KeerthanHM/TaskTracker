@@ -175,11 +175,16 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
                     <button onClick={() => signOut()} style={{
                         display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px",
                         borderRadius: "var(--radius-md)", width: "100%", color: "var(--text-secondary)",
-                        transition: "background-color var(--transition-fast)", cursor: "pointer"
+                        transition: "background-color var(--transition-fast)", cursor: "pointer",
+                        marginBottom: "16px"
                     }} onMouseOver={e => e.currentTarget.style.backgroundColor = "var(--bg-hover)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "transparent"}>
                         <LogOut size={18} />
                         <span>Log out</span>
                     </button>
+
+                    <div style={{ textAlign: "center", fontSize: "0.7rem", color: "var(--text-secondary)" }}>
+                        Developed by <a href="https://www.linkedin.com/in/keerthan-h-m-592391135/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-color)", textDecoration: "none", fontWeight: 600 }} onMouseOver={e => e.currentTarget.style.textDecoration = "underline"} onMouseOut={e => e.currentTarget.style.textDecoration = "none"}>Keerthan H M</a>
+                    </div>
                 </div>
             </div>
         </>
