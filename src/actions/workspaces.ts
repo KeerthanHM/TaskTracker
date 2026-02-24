@@ -85,7 +85,13 @@ export async function inviteMember(workspaceId: string, email: string) {
 
     // Find user by email
     const userToInvite = await prisma.user.findUnique({ where: { email } })
-    if (!userToInvite) throw new Error("User not found")
+    if (!userToInvite) throw new Error("User not found. They must sign in at least once first.")
+
+    // Check if already a member
+    const existing = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId: userToInvite.id } }
+    })
+    if (existing) throw new Error("This user is already a member of this workspace")
 
     await prisma.workspaceMember.create({
         data: {

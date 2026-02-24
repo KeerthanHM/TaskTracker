@@ -33,7 +33,8 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
         if (!name) return;
         setShowCreateWs(false);
         setNewWsName("");
-        await createWorkspace(name);
+        try { await createWorkspace(name); }
+        catch (e: any) { alert(e.message || "Failed to create workspace"); }
     };
 
     const handleSaveName = () => {
@@ -41,7 +42,8 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
         if (trimmed && trimmed !== user?.name) {
             startTransition(async () => {
                 setOptimisticName(trimmed);
-                await updateUserName(trimmed);
+                try { await updateUserName(trimmed); }
+                catch { /* revert will happen on next server render */ }
             });
         }
         setIsEditing(false);

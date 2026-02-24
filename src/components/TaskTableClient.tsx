@@ -256,9 +256,11 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
 
     // Toast state
     const [toast, setToast] = useState<{ message: string; type: "error" | "success" } | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const showToast = useCallback((message: string, type: "error" | "success" = "error") => {
+        if (toastTimer.current) clearTimeout(toastTimer.current);
         setToast({ message, type });
-        setTimeout(() => setToast(null), 4000);
+        toastTimer.current = setTimeout(() => setToast(null), 4000);
     }, []);
 
     // Optimistic state
