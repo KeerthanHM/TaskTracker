@@ -5,13 +5,18 @@ import { Folder, LogOut, Plus, Pencil, Check, X } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { createWorkspace } from "@/actions/workspaces";
 import { updateUserName } from "@/actions/user";
-import { useState, useTransition } from "react";
+import { useState, useOptimistic, startTransition } from "react";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(user?.name || "");
-    const [isPending, startTransition] = useTransition();
+
+    // Optimistic name — updates instantly in the sidebar
+    const [optimisticName, setOptimisticName] = useOptimistic(
+        user?.name || "",
+        (_current: string, newName: string) => newName
+    );
 
     const handleCreateWorkspace = async () => {
         const name = prompt("Enter new workspace name:");
@@ -21,8 +26,12 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
     };
 
     const handleSaveName = () => {
-        if (editName.trim() && editName !== user?.name) {
-            startTransition(() => { updateUserName(editName.trim()); });
+        const trimmed = editName.trim();
+        if (trimmed && trimmed !== user?.name) {
+            startTransition(async () => {
+                setOptimisticName(trimmed);
+                await updateUserName(trimmed);
+            });
         }
         setIsEditing(false);
     };
@@ -33,10 +42,10 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
             {/* User Profile Area */}
             <div className="flex items-center gap-3" style={{ marginBottom: "32px", padding: "8px", borderRadius: "var(--radius-md)" }}>
                 {user?.image ? (
-                    <img src={user.image} alt={user.name || "User"} style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} referrerPolicy="no-referrer" />
+                    <img src={user.image} alt={optimisticName} style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} referrerPolicy="no-referrer" />
                 ) : (
                     <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--accent-color)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 600, fontSize: "0.85rem" }}>
-                        {user?.name?.charAt(0).toUpperCase() || "U"}
+                        {optimisticName?.charAt(0).toUpperCase() || "U"}
                     </div>
                 )}
                 <div style={{ flex: 1, overflow: "hidden" }}>
@@ -53,8 +62,8 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
                             <button onClick={() => setIsEditing(false)} style={{ color: "var(--text-secondary)", flexShrink: 0 }}><X size={14} /></button>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1" style={{ cursor: "pointer" }} onClick={() => { setEditName(user?.name || ""); setIsEditing(true); }}>
-                            <div style={{ fontWeight: 600, fontSize: "0.9rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{user?.name}</div>
+                        <div className="flex items-center gap-1" style={{ cursor: "pointer" }} onClick={() => { setEditName(optimisticName); setIsEditing(true); }}>
+                            <div style={{ fontWeight: 600, fontSize: "0.9rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{optimisticName}</div>
                             <Pencil size={12} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
                         </div>
                     )}
