@@ -2,6 +2,7 @@ import Sidebar from "@/components/Sidebar";
 import TaskTableClient from "@/components/TaskTableClient";
 import { getWorkspaces } from "@/actions/workspaces";
 import { auth, signIn } from "@/auth";
+import prisma from "@/lib/prisma";
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ workspaceId?: string }> }) {
   const session = await auth();
@@ -37,8 +38,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
   let workspaces: any[] = [];
   let workspace = null;
   let fallbackId = undefined;
+  let dbUser = null;
 
   if (session?.user) {
+    dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
     workspaces = await getWorkspaces();
 
     // Wait for searchParams to resolve
@@ -58,7 +61,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
       <Sidebar
         workspaces={workspaces}
         activeWorkspaceId={fallbackId}
-        user={session?.user}
+        user={dbUser || session?.user}
       />
       <main className="main-content">
         {workspace ? (
@@ -66,7 +69,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
             workspace={workspace}
             tasks={workspace.tasks}
             members={workspace.members.map((m: any) => m.user)}
-            currentUser={session?.user}
+            currentUser={dbUser || session?.user}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-secondary">
