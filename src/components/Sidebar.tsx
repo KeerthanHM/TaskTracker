@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { Folder, LogOut, Plus } from "lucide-react";
+import { Folder, LogOut, Plus, Pencil, Check, X } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { createWorkspace } from "@/actions/workspaces";
+import { updateUserName } from "@/actions/user";
+import { useState, useTransition } from "react";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editName, setEditName] = useState(user?.name || "");
+    const [isPending, startTransition] = useTransition();
 
     const handleCreateWorkspace = async () => {
         const name = prompt("Enter new workspace name:");
@@ -15,25 +20,44 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
         }
     };
 
+    const handleSaveName = () => {
+        if (editName.trim() && editName !== user?.name) {
+            startTransition(() => { updateUserName(editName.trim()); });
+        }
+        setIsEditing(false);
+    };
+
     return (
         <div style={{ width: "260px", backgroundColor: "var(--bg-sidebar)", borderRight: "1px solid var(--border-color)", padding: "24px 16px", display: "flex", flexDirection: "column" }}>
 
             {/* User Profile Area */}
             <div className="flex items-center gap-3" style={{ marginBottom: "32px", padding: "8px", borderRadius: "var(--radius-md)" }}>
                 {user?.image ? (
-                    <img
-                        src={user.image}
-                        alt={user.name || "User"}
-                        style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }}
-                        referrerPolicy="no-referrer"
-                    />
+                    <img src={user.image} alt={user.name || "User"} style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover" }} referrerPolicy="no-referrer" />
                 ) : (
                     <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "var(--accent-color)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 600, fontSize: "0.85rem" }}>
                         {user?.name?.charAt(0).toUpperCase() || "U"}
                     </div>
                 )}
                 <div style={{ flex: 1, overflow: "hidden" }}>
-                    <div style={{ fontWeight: 600, fontSize: "0.9rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{user?.name}</div>
+                    {isEditing ? (
+                        <div className="flex items-center gap-1">
+                            <input
+                                autoFocus
+                                value={editName}
+                                onChange={e => setEditName(e.target.value)}
+                                onKeyDown={e => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setIsEditing(false); }}
+                                style={{ fontWeight: 600, fontSize: "0.9rem", background: "var(--bg-dark)", color: "var(--text-primary)", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)", padding: "2px 6px", width: "100%", outline: "none" }}
+                            />
+                            <button onClick={handleSaveName} style={{ color: "var(--accent-success)", flexShrink: 0 }}><Check size={14} /></button>
+                            <button onClick={() => setIsEditing(false)} style={{ color: "var(--text-secondary)", flexShrink: 0 }}><X size={14} /></button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1" style={{ cursor: "pointer" }} onClick={() => { setEditName(user?.name || ""); setIsEditing(true); }}>
+                            <div style={{ fontWeight: 600, fontSize: "0.9rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{user?.name}</div>
+                            <Pencil size={12} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+                        </div>
+                    )}
                     <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{user?.email}</div>
                 </div>
             </div>
