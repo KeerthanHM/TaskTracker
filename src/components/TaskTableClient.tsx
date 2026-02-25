@@ -476,11 +476,19 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                     </div>
                 </td>
                 <td data-label="Description">
-                    <input
-                        type="text" defaultValue={t.description || ""} placeholder="Add description…"
-                        onBlur={e => { if (e.target.value !== (t.description || "")) handleDescriptionChange(t.id, e.target.value); }}
-                        style={{ background: "transparent", border: "none", outline: "none", color: t.description ? "var(--text-primary)" : "var(--text-secondary)", fontSize: "0.85rem", width: "100%", cursor: "text", padding: "4px 0" }}
-                        onFocus={e => e.currentTarget.style.color = "var(--text-primary)"}
+                    <textarea
+                        defaultValue={t.description || ""} placeholder="Add description…"
+                        rows={1}
+                        onBlur={e => {
+                            e.currentTarget.rows = 1;
+                            e.currentTarget.style.color = t.description ? "var(--text-primary)" : "var(--text-secondary)";
+                            if (e.target.value !== (t.description || "")) handleDescriptionChange(t.id, e.target.value);
+                        }}
+                        onFocus={e => {
+                            e.currentTarget.rows = 4;
+                            e.currentTarget.style.color = "var(--text-primary)";
+                        }}
+                        style={{ background: "transparent", border: "none", outline: "none", color: t.description ? "var(--text-primary)" : "var(--text-secondary)", fontSize: "0.85rem", width: "100%", cursor: "text", padding: "4px 0", resize: "none", fontFamily: "inherit", lineHeight: 1.5, overflow: "hidden" }}
                     />
                 </td>
                 <td data-label="Status">
