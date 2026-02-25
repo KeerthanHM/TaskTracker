@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useOptimistic, startTransition } from "react";
-import Link from "next/link";
+import { useState, useOptimistic, startTransition, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Folder, LogOut, Plus, Pencil, Check, X, CircleDashed, Circle } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { createWorkspace } from "@/actions/workspaces";
@@ -27,6 +27,9 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
     const [isOpen, setIsOpen] = useState(false);
     const [showCreateWs, setShowCreateWs] = useState(false);
     const [newWsName, setNewWsName] = useState("");
+    const [loadingWsId, setLoadingWsId] = useState<string | null>(null);
+    const router = useRouter();
+    const [isPending, startNavTransition] = useTransition();
 
     const handleCreateWorkspace = async () => {
         const name = newWsName.trim();
@@ -179,18 +182,33 @@ export default function Sidebar({ workspaces, activeWorkspaceId, user }: any) {
                 <div style={{ flex: 1, overflowY: "auto" }}>
                     {workspaces.map((ws: any) => {
                         const isActive = ws.id === activeWorkspaceId;
+                        const isLoading = loadingWsId === ws.id && isPending;
                         return (
-                            <Link key={ws.id} href={`/?workspaceId=${ws.id}`} onClick={() => setIsOpen(false)} style={{
-                                display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px",
-                                borderRadius: "var(--radius-md)", marginBottom: "4px",
-                                backgroundColor: isActive ? "var(--bg-hover)" : "transparent",
-                                color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
-                                fontWeight: isActive ? 500 : 400,
-                                transition: "background-color var(--transition-fast)"
-                            }}>
-                                <Folder size={18} strokeWidth={isActive ? 2.5 : 2} />
-                                <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{ws.name}</span>
-                            </Link>
+                            <button key={ws.id}
+                                onClick={() => {
+                                    if (isActive) return;
+                                    setLoadingWsId(ws.id);
+                                    setIsOpen(false);
+                                    startNavTransition(() => {
+                                        router.push(`/?workspaceId=${ws.id}`);
+                                    });
+                                }}
+                                className={isLoading ? "ws-loading" : ""}
+                                style={{
+                                    display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px",
+                                    borderRadius: "var(--radius-md)", marginBottom: "4px", width: "100%",
+                                    backgroundColor: isActive ? "var(--bg-hover)" : "transparent",
+                                    color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
+                                    fontWeight: isActive ? 500 : 400,
+                                    transition: "background-color var(--transition-fast)",
+                                    cursor: isActive ? "default" : "pointer",
+                                    position: "relative", overflow: "hidden",
+                                    textAlign: "left", border: "none"
+                                }}
+                            >
+                                <Folder size={18} strokeWidth={isActive ? 2.5 : 2} style={{ position: "relative", zIndex: 1 }} />
+                                <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", position: "relative", zIndex: 1 }}>{ws.name}</span>
+                            </button>
                         )
                     })}
                     {workspaces.length === 0 && (

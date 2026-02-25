@@ -460,6 +460,37 @@ tr.drag-over td {
   }
 }
 
+/* ─── Workspace Loading Fill Animation ─── */
+.ws-loading {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+}
+
+.ws-loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(74, 222, 128, 0.2) 0%, rgba(74, 222, 128, 0.35) 100%);
+  border-radius: inherit;
+  animation: wsFill 2s ease-in-out infinite;
+  transform-origin: left center;
+}
+
+@keyframes wsFill {
+  0% {
+    transform: scaleX(0);
+  }
+
+  50% {
+    transform: scaleX(1);
+  }
+
+  100% {
+    transform: scaleX(1);
+    opacity: 0.3;
+  }
+}
+
 @keyframes pulse {
 
   0%,
