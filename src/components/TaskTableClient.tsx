@@ -679,7 +679,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 {(activeTab === "All Tasks" || activeTab === "My Tasks") && (
                     <div style={{ display: 'flex', gap: '8px' }}>
                         {currentUserRole === "OWNER" && (
-                            <button onClick={() => setShowDeleteWsConfirm(true)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--accent-danger)", borderRadius: "var(--radius-md)", color: "var(--accent-danger)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => { e.currentTarget.style.backgroundColor = "var(--badge-high-bg)"; }} onMouseOut={e => { e.currentTarget.style.backgroundColor = "transparent"; }}>
+                            <button onClick={() => setShowDeleteWsConfirm(true)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", color: "var(--text-secondary)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text-primary)"; }} onMouseOut={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}>
                                 Delete Workspace
                             </button>
                         )}
