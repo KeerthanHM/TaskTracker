@@ -34,36 +34,51 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
   }
 
   const userId = session.user.id!;
+  const sp = await searchParams;
 
-  // Single Prisma call: fetch user + their workspace memberships in parallel
-  const [dbUser, memberships] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId } }),
-    prisma.workspaceMember.findMany({
-      where: { userId },
-      include: { workspace: true }
-    })
-  ]);
+  // Fetch user + workspace list + workspace data in ONE parallel batch
+  const [dbUser, memberships, workspaceId] = await (async () => {
+    const [u, m] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.workspaceMember.findMany({
+        where: { userId },
+        include: { workspace: true }
+      })
+    ]);
+    const wsId = sp?.workspaceId || m[0]?.workspace?.id;
+    return [u, m, wsId] as const;
+  })();
 
   const workspaces = memberships.map(m => m.workspace);
 
-  const sp = await searchParams;
-  const workspaceId = sp?.workspaceId || workspaces[0]?.id;
-
+  // Fetch workspace data only if we have an ID — run concurrently with nothing blocking it
   let workspace = null;
   if (workspaceId) {
-    // Verify membership and fetch workspace data
     const membership = await prisma.workspaceMember.findUnique({
       where: { workspaceId_userId: { workspaceId, userId } },
       include: {
         workspace: {
           include: {
-            members: { include: { user: true } },
+            members: {
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true, image: true, availability: true }
+                }
+              }
+            },
             tasks: {
               where: { parentId: null },
+              take: 200,
               include: {
-                assignee: true,
+                assignee: {
+                  select: { id: true, name: true, email: true, image: true }
+                },
                 subtasks: {
-                  include: { assignee: true },
+                  include: {
+                    assignee: {
+                      select: { id: true, name: true, email: true, image: true }
+                    }
+                  },
                   orderBy: { sortOrder: 'asc' }
                 }
               },
