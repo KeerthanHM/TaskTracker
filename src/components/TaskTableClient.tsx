@@ -3,7 +3,7 @@
 import { useState, useRef, useOptimistic, startTransition as reactStartTransition, Fragment, useCallback } from "react";
 import { CheckCircle2, Circle, Plus, User, Star, Trash2, GripVertical, ChevronRight, ChevronDown, BarChart3, CircleDashed, X, AlertCircle } from "lucide-react";
 import { createTask, updateTaskStatus, updateTaskPriority, updateTaskAssignee, deleteTask, updateTaskDescription, reorderTasks } from "@/actions/tasks";
-import { inviteMember } from "@/actions/workspaces";
+import { inviteMember, deleteWorkspace } from "@/actions/workspaces";
 
 // ─── Types ─────────────────────────────────────────────
 interface TaskUser {
@@ -39,6 +39,7 @@ interface TaskTableProps {
     tasks: Task[];
     members: TaskUser[];
     currentUser: any;
+    currentUserRole: string;
 }
 
 // ─── Toast Notification System ──────────────────────────
@@ -240,7 +241,7 @@ function applyOptimisticUpdate(tasks: Task[], action: TaskAction): Task[] {
 }
 
 // ─── Main Component ─────────────────────────────────────
-export default function TaskTableClient({ workspace, tasks: serverTasks, members, currentUser }: TaskTableProps) {
+export default function TaskTableClient({ workspace, tasks: serverTasks, members, currentUser, currentUserRole }: TaskTableProps) {
     const [activeTab, setActiveTab] = useState("All Tasks");
     const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
     const dragItem = useRef<string | null>(null);
@@ -262,6 +263,19 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         setToast({ message, type });
         toastTimer.current = setTimeout(() => setToast(null), 4000);
     }, []);
+
+    const [showDeleteWsConfirm, setShowDeleteWsConfirm] = useState(false);
+
+    const handleDeleteWorkspace = async () => {
+        try {
+            await deleteWorkspace(workspace.id);
+            setShowDeleteWsConfirm(false);
+            showToast("Workspace deleted successfully.", "success");
+        } catch (e: any) {
+            showToast(e.message || "Failed to delete workspace.", "error");
+            setShowDeleteWsConfirm(false);
+        }
+    };
 
     // Optimistic state
     const [optimisticTasks, addOptimistic] = useOptimistic(serverTasks, applyOptimisticUpdate);
@@ -621,6 +635,17 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 </Modal>
             )}
 
+            {/* Delete Workspace Confirmation Modal */}
+            {showDeleteWsConfirm && (
+                <Modal title="Delete Workspace" onClose={() => setShowDeleteWsConfirm(false)}>
+                    <p style={{ color: "var(--text-secondary)", marginBottom: "20px" }}>Are you sure you want to delete the workspace <strong>{workspace.name}</strong>? This will permanently delete all tasks, subtasks, and member associations. This action cannot be undone.</p>
+                    <div className="flex items-center gap-2" style={{ justifyContent: "flex-end" }}>
+                        <button onClick={() => setShowDeleteWsConfirm(false)} style={btnSecondary}>Cancel</button>
+                        <button onClick={handleDeleteWorkspace} style={{ ...btnPrimary, backgroundColor: "var(--accent-danger)" }}>Delete Workspace</button>
+                    </div>
+                </Modal>
+            )}
+
             {/* Header */}
             <div style={{ marginBottom: "32px" }}>
                 <h1 style={{ fontSize: "2rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
@@ -653,6 +678,11 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 </div>
                 {(activeTab === "All Tasks" || activeTab === "My Tasks") && (
                     <div style={{ display: 'flex', gap: '8px' }}>
+                        {currentUserRole === "OWNER" && (
+                            <button onClick={() => setShowDeleteWsConfirm(true)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--accent-danger)", borderRadius: "var(--radius-md)", color: "var(--accent-danger)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => { e.currentTarget.style.backgroundColor = "var(--badge-high-bg)"; }} onMouseOut={e => { e.currentTarget.style.backgroundColor = "transparent"; }}>
+                                Delete Workspace
+                            </button>
+                        )}
                         <button onClick={() => setShowInviteModal(true)} style={{ padding: "8px 16px", backgroundColor: "var(--border-color)", borderRadius: "var(--radius-md)", color: "var(--text-primary)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => e.currentTarget.style.backgroundColor = "var(--border-subtle)"} onMouseOut={e => e.currentTarget.style.backgroundColor = "var(--border-color)"}>
                             Invite Member
                         </button>

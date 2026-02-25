@@ -104,3 +104,23 @@ export async function inviteMember(workspaceId: string, email: string) {
     revalidatePath("/")
     revalidatePath(`/?workspaceId=${workspaceId}`)
 }
+
+export async function deleteWorkspace(workspaceId: string) {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    // Ensure user is the OWNER
+    const membership = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId: session.user.id } }
+    })
+
+    if (!membership || membership.role !== "OWNER") {
+        throw new Error("Only the workspace owner can delete it.")
+    }
+
+    await prisma.workspace.delete({
+        where: { id: workspaceId }
+    })
+
+    revalidatePath("/")
+}

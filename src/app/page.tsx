@@ -53,6 +53,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
 
   // Fetch workspace data only if we have an ID — run concurrently with nothing blocking it
   let workspace = null;
+  let currentUserRole = "MEMBER";
   if (workspaceId) {
     const membership = await prisma.workspaceMember.findUnique({
       where: { workspaceId_userId: { workspaceId, userId } },
@@ -89,6 +90,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
       }
     });
     workspace = membership?.workspace || null;
+    currentUserRole = membership?.role || "MEMBER";
   }
 
   return (
@@ -105,6 +107,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
             tasks={workspace.tasks}
             members={workspace.members.map((m: any) => m.user)}
             currentUser={dbUser || session.user}
+            currentUserRole={currentUserRole}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-secondary">
