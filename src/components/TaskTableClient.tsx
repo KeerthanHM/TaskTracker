@@ -244,6 +244,8 @@ function applyOptimisticUpdate(tasks: Task[], action: TaskAction): Task[] {
 export default function TaskTableClient({ workspace, tasks: serverTasks, members, currentUser, currentUserRole }: TaskTableProps) {
     const [activeTab, setActiveTab] = useState("All Tasks");
     const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+    const [celebratingTasks, setCelebratingTasks] = useState<Set<string>>(new Set());
+    const [completedAt, setCompletedAt] = useState<Map<string, number>>(new Map());
     const dragItem = useRef<string | null>(null);
     const dragOverItem = useRef<string | null>(null);
 
@@ -283,10 +285,23 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
     // Flatten for dashboard
     const allTasksFlat = optimisticTasks.flatMap(t => [t, ...(t.subtasks || [])]);
 
-    const filteredTasks = optimisticTasks.filter(t => {
-        if (activeTab === "My Tasks") return t.assigneeId === currentUser?.id;
-        return true;
-    });
+    const filteredTasks = optimisticTasks
+        .filter(t => {
+            if (activeTab === "My Tasks") return t.assigneeId === currentUser?.id;
+            return true;
+        })
+        .sort((a, b) => {
+            const aDone = a.status === "Done" ? 1 : 0;
+            const bDone = b.status === "Done" ? 1 : 0;
+            if (aDone !== bDone) return aDone - bDone;
+            // Within done group: most recently completed first
+            if (aDone && bDone) {
+                const aTime = completedAt.get(a.id) || 0;
+                const bTime = completedAt.get(b.id) || 0;
+                return bTime - aTime;
+            }
+            return 0;
+        });
 
     const toggleExpand = (taskId: string) => {
         setExpandedTasks(prev => {
@@ -299,11 +314,39 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
 
     // ─── Action Handlers (with error handling) ──────────
     const handleStatusChange = (taskId: string, status: string) => {
-        reactStartTransition(async () => {
-            addOptimistic({ type: "updateStatus", taskId, status });
-            try { await updateTaskStatus(taskId, status); }
-            catch (e: any) { showToast(e.message || "Failed to update status"); }
-        });
+        if (status === "Done") {
+            // Step 1: Trigger celebration immediately — functional updaters for race-condition safety
+            setCelebratingTasks(prev => new Set(prev).add(taskId));
+            setCompletedAt(prev => new Map(prev).set(taskId, Date.now()));
+            // Step 2: After lift animation plays, commit the status change
+            setTimeout(() => {
+                reactStartTransition(async () => {
+                    addOptimistic({ type: "updateStatus", taskId, status: "Done" });
+                    try { await updateTaskStatus(taskId, "Done"); }
+                    catch (e: any) { showToast(e.message || "Failed to update status"); }
+                });
+                // Step 3: Clean up celebration — functional updater prevents stale closures
+                setTimeout(() => {
+                    setCelebratingTasks(prev => {
+                        const next = new Set(prev);
+                        next.delete(taskId);
+                        return next;
+                    });
+                }, 250);
+            }, 500);
+        } else {
+            // Non-Done status: immediate update, clear completedAt if unmarking
+            reactStartTransition(async () => {
+                addOptimistic({ type: "updateStatus", taskId, status });
+                try { await updateTaskStatus(taskId, status); }
+                catch (e: any) { showToast(e.message || "Failed to update status"); }
+            });
+            setCompletedAt(prev => {
+                const next = new Map(prev);
+                next.delete(taskId);
+                return next;
+            });
+        }
     };
 
     const handlePriorityChange = (taskId: string, priority: string) => {
@@ -454,17 +497,31 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
         const hasSubtasks = t.subtasks && t.subtasks.length > 0;
         const isExpanded = expandedTasks.has(t.id);
         const subtasksDone = hasSubtasks ? t.subtasks!.filter(s => s.status === "Done").length : 0;
+        const isCelebrating = celebratingTasks.has(t.id);
 
         return (
             <tr
                 key={t.id}
-                className={isSubtask ? "subtask-row" : ""}
+                className={`${isSubtask ? "subtask-row" : ""} ${isCelebrating ? "celebrating" : ""}`}
                 draggable={!isSubtask}
                 onDragStart={() => !isSubtask && handleDragStart(t.id)}
                 onDragOver={(e) => !isSubtask && handleDragOver(e, t.id)}
                 onDrop={() => !isSubtask && handleDrop()}
             >
-                <td data-label="Task" style={{ fontWeight: 500, paddingLeft: isSubtask ? "48px" : undefined }}>
+                <td data-label="Task" style={{ fontWeight: 500, paddingLeft: isSubtask ? "48px" : undefined, position: "relative" }}>
+                    {/* Confetti particles — inside td to keep valid HTML */}
+                    {isCelebrating && (
+                        <>
+                            <span className="confetti-particle cp1" />
+                            <span className="confetti-particle cp2" />
+                            <span className="confetti-particle cp3" />
+                            <span className="confetti-particle cp4" />
+                            <span className="confetti-particle cp5" />
+                            <span className="confetti-particle cp6" />
+                            <span className="confetti-particle cp7" />
+                            <span className="confetti-particle cp8" />
+                        </>
+                    )}
                     <div className="flex items-center gap-2 w-full">
                         {!isSubtask && (
                             <span style={{ cursor: "grab", color: "var(--text-secondary)", display: "flex", flexShrink: 0 }}>

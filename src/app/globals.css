@@ -463,3 +463,149 @@ tr.drag-over td {
     opacity: 0.8;
   }
 }
+
+/* ─── Done Task Celebration ─── */
+@keyframes celebrateLift {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  35% {
+    transform: translateY(-8px) scale(1.015);
+  }
+
+  70% {
+    transform: translateY(-3px) scale(1.005);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+tr.celebrating {
+  animation: celebrateLift 0.5s ease-out forwards;
+  position: relative;
+  z-index: 5;
+}
+
+/* Confetti particles — mounted inside first <td> */
+.confetti-particle {
+  position: absolute;
+  top: 50%;
+  left: 28px;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation-duration: 0.55s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes cp1 {
+  to {
+    transform: translate(-32px, -44px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes cp2 {
+  to {
+    transform: translate(32px, -44px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes cp3 {
+  to {
+    transform: translate(-52px, -18px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes cp4 {
+  to {
+    transform: translate(52px, -18px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes cp5 {
+  to {
+    transform: translate(-18px, -54px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes cp6 {
+  to {
+    transform: translate(18px, -54px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes cp7 {
+  to {
+    transform: translate(-40px, -30px) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes cp8 {
+  to {
+    transform: translate(40px, -30px) scale(0);
+    opacity: 0;
+  }
+}
+
+.confetti-particle.cp1 {
+  background: #ef4444;
+  animation-name: cp1;
+  animation-delay: 0ms;
+}
+
+.confetti-particle.cp2 {
+  background: #3b82f6;
+  animation-name: cp2;
+  animation-delay: 30ms;
+}
+
+.confetti-particle.cp3 {
+  background: #10b981;
+  animation-name: cp3;
+  animation-delay: 55ms;
+  border-radius: 50%;
+}
+
+.confetti-particle.cp4 {
+  background: #f59e0b;
+  animation-name: cp4;
+  animation-delay: 0ms;
+}
+
+.confetti-particle.cp5 {
+  background: #8b5cf6;
+  animation-name: cp5;
+  animation-delay: 40ms;
+  border-radius: 50%;
+}
+
+.confetti-particle.cp6 {
+  background: #ec4899;
+  animation-name: cp6;
+  animation-delay: 20ms;
+}
+
+.confetti-particle.cp7 {
+  background: #f97316;
+  animation-name: cp7;
+  animation-delay: 50ms;
+  border-radius: 50%;
+}
+
+.confetti-particle.cp8 {
+  background: #14b8a6;
+  animation-name: cp8;
+  animation-delay: 10ms;
+}
