@@ -726,7 +726,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
 
             {/* Task Table */}
             {(activeTab === "All Tasks" || activeTab === "My Tasks") && (
-                <div className="task-table-container" style={{ backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
+                <div className="task-table-container" style={{ backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", overflowX: "auto" }}>
                     <table>
                         <thead>
                             <tr>
