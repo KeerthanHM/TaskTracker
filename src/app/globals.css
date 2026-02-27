@@ -132,6 +132,12 @@ button {
   flex-direction: column;
   transition: transform var(--transition-normal);
   z-index: 50;
+  /* Stick to viewport so footer is always visible */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .mobile-menu-btn {
@@ -333,6 +339,7 @@ tr.drag-over td {
     top: 0;
     left: 0;
     bottom: 0;
+    height: 100vh;
     transform: translateX(-100%);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
   }
@@ -374,99 +381,8 @@ tr.drag-over td {
     justify-content: center;
   }
 
-  /* Table becomes stacked cards on mobile */
-  .task-table-container {
-    background: transparent !important;
-    border: none !important;
-  }
-
-  table {
-    display: block;
-  }
-
-  thead {
-    display: none;
-    /* Hide headers on mobile */
-  }
-
-  tbody {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  tr {
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg-panel);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 12px;
-  }
-
-  .subtask-row {
-    margin-left: 24px;
-    border-left: 3px solid var(--border-color);
-  }
-
-  td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-subtle);
-  }
-
-  .subtask-row td:first-child {
-    padding-left: 0;
-    /* Reset desktop indent */
-  }
-
-  td:last-child {
-    border-bottom: none;
-  }
-
-  /* Add pseudo-labels for stacked table view */
-  td::before {
-    content: attr(data-label);
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 500;
-    margin-right: 16px;
-  }
-
-  /* First column (Title) spans full and hides label */
-  td:first-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  td:first-child::before {
-    display: none;
-  }
-
-  /* Description full width */
-  td:nth-child(2) {
-    justify-content: flex-start;
-  }
-
-  td:nth-child(2)::before {
-    display: none;
-  }
-
-  /* Input styling inside stacked config */
-  td input {
-    text-align: left;
-    width: 100%;
-  }
-
-  /* Select styling inside stacked config */
-  td select {
-    text-align: right;
-    max-width: 100%;
-  }
+  /* Task table: horizontally scrollable on mobile — same as desktop */
+  /* overflow-x: auto + min-width: 700px already set on .task-table-container */
 
   /* Toast on mobile */
   .toast-notification {
