@@ -45,7 +45,7 @@ interface TaskTableProps {
 // ─── Toast Notification System ──────────────────────────
 function Toast({ message, type, onClose }: { message: string; type: "error" | "success"; onClose: () => void }) {
     return (
-        <div style={{
+        <div className="toast-notification" style={{
             position: "fixed", bottom: 24, right: 24, zIndex: 9999,
             display: "flex", alignItems: "center", gap: "10px",
             padding: "14px 20px", borderRadius: "var(--radius-md)",
@@ -71,7 +71,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
             display: "flex", alignItems: "center", justifyContent: "center",
             backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)"
         }} onClick={onClose}>
-            <div onClick={e => e.stopPropagation()} style={{
+            <div className="modal-inner" onClick={e => e.stopPropagation()} style={{
                 width: "100%", maxWidth: 420, padding: "28px",
                 backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)",
                 border: "1px solid var(--border-color)",
@@ -112,7 +112,7 @@ function Dashboard({ allTasks }: { allTasks: Task[] }) {
     const cardStyle: React.CSSProperties = {
         flex: 1, padding: "20px", borderRadius: "var(--radius-lg)",
         backgroundColor: "var(--dashboard-card-bg)", border: "1px solid var(--dashboard-card-border)",
-        minWidth: 140,
+        minWidth: 0,
     };
     const labelStyle: React.CSSProperties = { fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" };
     const valueStyle: React.CSSProperties = { fontSize: "1.75rem", fontWeight: 700 };
@@ -648,7 +648,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
 
             {/* Header */}
             <div style={{ marginBottom: "32px" }}>
-                <h1 style={{ fontSize: "2rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+                <h1 style={{ fontSize: "clamp(1.4rem, 4vw, 2rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
                     <div style={{ backgroundColor: "var(--accent-success)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <CheckCircle2 size={24} color="var(--bg-dark)" strokeWidth={3} />
                     </div>
@@ -659,13 +659,14 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
 
             {/* Tabs */}
             <div className="header-actions" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", paddingBottom: "12px", borderBottom: "1px solid var(--border-color)" }}>
-                <div style={{ display: "flex", gap: "24px" }}>
+                <div style={{ display: "flex", gap: "24px", overflowX: "auto", paddingBottom: "2px" }}>
                     {tabs.map(tab => {
                         const isActive = activeTab === tab.name;
                         const Icon = tab.icon;
                         return (
                             <button key={tab.name} onClick={() => setActiveTab(tab.name)} style={{
                                 display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap",
+                                flexShrink: 0,
                                 color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
                                 fontWeight: isActive ? 600 : 400, paddingBottom: "12px", marginBottom: "-13px",
                                 borderBottom: isActive ? "2px solid var(--text-primary)" : "2px solid transparent",
@@ -677,7 +678,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                     })}
                 </div>
                 {(activeTab === "All Tasks" || activeTab === "My Tasks") && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                         {currentUserRole === "OWNER" && (
                             <button onClick={() => setShowDeleteWsConfirm(true)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", color: "var(--text-secondary)", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }} onMouseOver={e => { e.currentTarget.style.backgroundColor = "var(--bg-hover)"; e.currentTarget.style.color = "var(--text-primary)"; }} onMouseOut={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}>
                                 Delete Workspace
@@ -729,12 +730,12 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                     <table>
                         <thead>
                             <tr>
-                                <th style={{ width: "25%" }}>Task name</th>
-                                <th style={{ width: "20%" }}>Description</th>
-                                <th style={{ width: "13%" }}>Status</th>
-                                <th style={{ width: "17%" }}>Assignee</th>
-                                <th style={{ width: "13%" }}>Priority</th>
-                                <th style={{ width: "8%" }}></th>
+                                <th style={{ width: "28%" }}>Task name</th>
+                                <th style={{ width: "15%" }}>Description</th>
+                                <th style={{ width: "14%" }}>Status</th>
+                                <th style={{ width: "18%" }}>Assignee</th>
+                                <th style={{ width: "14%" }}>Priority</th>
+                                <th style={{ width: "11%", minWidth: "80px" }}></th>
                             </tr>
                         </thead>
                         <tbody>

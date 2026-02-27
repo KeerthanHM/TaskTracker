@@ -9,7 +9,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
   if (!session?.user) {
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full">
-        <div style={{ maxWidth: 400, width: "100%", padding: "40px", backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", textAlign: "center" }}>
+        <div style={{ maxWidth: 400, width: "100%", padding: "clamp(24px, 6vw, 40px)", margin: "16px", backgroundColor: "var(--bg-panel)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", textAlign: "center" }}>
           <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "8px" }}>Tasks Tracker</h1>
           <p className="text-secondary" style={{ marginBottom: "32px" }}>Stay organized with tasks, your way.</p>
 

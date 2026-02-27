@@ -113,12 +113,13 @@ button {
   display: flex;
   min-height: 100vh;
   width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .main-content {
   flex: 1;
   padding: 32px 64px;
+  min-width: 0;
 }
 
 /* Sidebar Responsive Config */
@@ -159,6 +160,15 @@ button {
 }
 
 /* Table Responsive Config */
+.task-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.task-table-container table {
+  min-width: 700px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -292,6 +302,15 @@ tr.drag-over td {
 }
 
 /* =========================================
+   TABLET RESPONSIVENESS (<= 1024px)
+========================================= */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 24px 32px;
+  }
+}
+
+/* =========================================
    MOBILE RESPONSIVENESS (< 768px)
 ========================================= */
 @media (max-width: 768px) {
@@ -394,6 +413,8 @@ tr.drag-over td {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
     padding: 8px 0;
     border-bottom: 1px solid var(--border-subtle);
   }
@@ -444,6 +465,30 @@ tr.drag-over td {
   /* Select styling inside stacked config */
   td select {
     text-align: right;
+    max-width: 100%;
+  }
+
+  /* Toast on mobile */
+  .toast-notification {
+    left: 24px;
+    right: 24px;
+    bottom: 16px;
+    max-width: calc(100vw - 48px);
+  }
+}
+
+/* =========================================
+   SMALL PHONE (< 480px)
+========================================= */
+@media (max-width: 480px) {
+  .modal-inner {
+    margin: 16px;
+    width: calc(100% - 32px) !important;
+    max-width: calc(100% - 32px) !important;
+  }
+
+  .main-content {
+    padding: 64px 12px 24px 12px;
   }
 }
 
