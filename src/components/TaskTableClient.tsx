@@ -508,20 +508,7 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                 onDragOver={(e) => !isSubtask && handleDragOver(e, t.id)}
                 onDrop={() => !isSubtask && handleDrop()}
             >
-                <td data-label="Task" style={{ fontWeight: 500, paddingLeft: isSubtask ? "48px" : undefined, position: "relative" }}>
-                    {/* Confetti particles — inside td to keep valid HTML */}
-                    {isCelebrating && (
-                        <>
-                            <span className="confetti-particle cp1" />
-                            <span className="confetti-particle cp2" />
-                            <span className="confetti-particle cp3" />
-                            <span className="confetti-particle cp4" />
-                            <span className="confetti-particle cp5" />
-                            <span className="confetti-particle cp6" />
-                            <span className="confetti-particle cp7" />
-                            <span className="confetti-particle cp8" />
-                        </>
-                    )}
+                <td data-label="Task" style={{ fontWeight: 500, paddingLeft: isSubtask ? "48px" : undefined }}>
                     <div className="flex items-center gap-2 w-full">
                         {!isSubtask && (
                             <span style={{ cursor: "grab", color: "var(--text-secondary)", display: "flex", flexShrink: 0 }}>
@@ -562,7 +549,20 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
                         style={{ background: "transparent", border: "none", outline: "none", color: t.description ? "var(--text-primary)" : "var(--text-secondary)", fontSize: "0.85rem", width: "100%", cursor: "text", padding: "4px 0", resize: "none", fontFamily: "inherit", lineHeight: 1.5, overflow: "hidden" }}
                     />
                 </td>
-                <td data-label="Status">
+                <td data-label="Status" style={{ position: "relative" }}>
+                    {/* Confetti burst from the Done status pill */}
+                    {isCelebrating && (
+                        <>
+                            <span className="confetti-particle cp1" />
+                            <span className="confetti-particle cp2" />
+                            <span className="confetti-particle cp3" />
+                            <span className="confetti-particle cp4" />
+                            <span className="confetti-particle cp5" />
+                            <span className="confetti-particle cp6" />
+                            <span className="confetti-particle cp7" />
+                            <span className="confetti-particle cp8" />
+                        </>
+                    )}
                     <select value={t.status} onChange={e => handleStatusChange(t.id, e.target.value)} style={statusStyle(t.status)}>
                         <option value="Not started">Not started</option>
                         <option value="In progress">In progress</option>

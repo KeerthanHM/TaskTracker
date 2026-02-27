@@ -489,11 +489,11 @@ tr.celebrating {
   z-index: 5;
 }
 
-/* Confetti particles — mounted inside first <td> */
+/* Confetti particles — mounted inside status <td> */
 .confetti-particle {
   position: absolute;
   top: 50%;
-  left: 28px;
+  left: 50%;
   width: 6px;
   height: 6px;
   border-radius: 2px;
