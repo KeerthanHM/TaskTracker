@@ -391,6 +391,22 @@ tr.drag-over td {
     bottom: 16px;
     max-width: calc(100vw - 48px);
   }
+
+  /* Dashboard cards: wrap into 2×2 grid on mobile */
+  .dashboard-cards {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-cards>div {
+    min-width: calc(50% - 8px);
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  /* Hide hamburger when sidebar is open (it overlaps edit inputs) */
+  .sidebar.open~.mobile-menu-btn,
+  .mobile-menu-btn.hidden {
+    display: none !important;
+  }
 }
 
 /* =========================================

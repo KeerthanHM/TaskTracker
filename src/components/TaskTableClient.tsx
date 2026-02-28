@@ -129,7 +129,7 @@ function Dashboard({ allTasks }: { allTasks: Task[] }) {
 
     return (
         <div style={{ marginBottom: "32px" }}>
-            <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
+            <div className="dashboard-cards" style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
                 <div style={cardStyle}>
                     <div style={labelStyle}>Total Tasks</div>
                     <div style={valueStyle}>{total}</div>
