@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useOptimistic, startTransition as reactStartTransition, Fragment, useCallback } from "react";
-import { CheckCircle2, Circle, Plus, User, Star, Trash2, GripVertical, ChevronRight, ChevronDown, BarChart3, CircleDashed, X, AlertCircle } from "lucide-react";
+import { CheckCircle2, Circle, Plus, User, Star, Trash2, GripVertical, ChevronRight, ChevronDown, BarChart3, CircleDashed, X, AlertCircle, Pencil, Check } from "lucide-react";
 import { createTask, updateTaskStatus, updateTaskPriority, updateTaskAssignee, deleteTask, updateTaskDescription, reorderTasks } from "@/actions/tasks";
-import { inviteMember, deleteWorkspace } from "@/actions/workspaces";
+import { inviteMember, deleteWorkspace, renameWorkspace } from "@/actions/workspaces";
 
 // ─── Types ─────────────────────────────────────────────
 interface TaskUser {
@@ -267,6 +267,28 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
     }, []);
 
     const [showDeleteWsConfirm, setShowDeleteWsConfirm] = useState(false);
+
+    // Workspace title inline edit (owner only)
+    const [wsName, setWsName] = useState(workspace.name as string);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitleValue, setEditTitleValue] = useState(workspace.name as string);
+
+    const handleRenameWorkspace = () => {
+        const trimmed = editTitleValue.trim();
+        setIsEditingTitle(false);
+        if (!trimmed || trimmed === wsName) return;
+        const prev = wsName;
+        setWsName(trimmed);
+        reactStartTransition(async () => {
+            try {
+                await renameWorkspace(workspace.id, trimmed);
+                showToast("Workspace renamed!", "success");
+            } catch (e: any) {
+                setWsName(prev); // revert on error
+                showToast(e.message || "Failed to rename workspace.", "error");
+            }
+        });
+    };
 
     const handleDeleteWorkspace = async () => {
         try {
@@ -706,10 +728,57 @@ export default function TaskTableClient({ workspace, tasks: serverTasks, members
             {/* Header */}
             <div style={{ marginBottom: "32px" }}>
                 <h1 style={{ fontSize: "clamp(1.4rem, 4vw, 2rem)", fontWeight: 700, display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                    <div style={{ backgroundColor: "var(--accent-success)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ backgroundColor: "var(--accent-success)", borderRadius: "50%", width: 36, height: 36, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <CheckCircle2 size={24} color="var(--bg-dark)" strokeWidth={3} />
                     </div>
-                    {workspace.name}
+                    {currentUserRole === "OWNER" ? (
+                        isEditingTitle ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <input
+                                    autoFocus
+                                    value={editTitleValue}
+                                    onChange={e => setEditTitleValue(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === "Enter") handleRenameWorkspace();
+                                        if (e.key === "Escape") { setIsEditingTitle(false); setEditTitleValue(wsName); }
+                                    }}
+                                    style={{
+                                        fontSize: "clamp(1.4rem, 4vw, 2rem)", fontWeight: 700,
+                                        background: "var(--bg-dark)", color: "var(--text-primary)",
+                                        border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)",
+                                        padding: "2px 10px", outline: "none", minWidth: 0, width: "auto",
+                                        maxWidth: "clamp(200px, 50vw, 480px)"
+                                    }}
+                                />
+                                <button
+                                    onClick={handleRenameWorkspace}
+                                    disabled={!editTitleValue.trim()}
+                                    style={{ color: "var(--accent-success)", flexShrink: 0, opacity: editTitleValue.trim() ? 1 : 0.4 }}
+                                    title="Save"
+                                >
+                                    <Check size={20} />
+                                </button>
+                                <button
+                                    onClick={() => { setIsEditingTitle(false); setEditTitleValue(wsName); }}
+                                    style={{ color: "var(--text-secondary)", flexShrink: 0 }}
+                                    title="Cancel"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div
+                                onClick={() => { setEditTitleValue(wsName); setIsEditingTitle(true); }}
+                                style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                                title="Click to rename workspace"
+                            >
+                                <span>{wsName}</span>
+                                <Pencil size={18} color="var(--text-secondary)" style={{ flexShrink: 0, opacity: 0.6 }} />
+                            </div>
+                        )
+                    ) : (
+                        <span>{wsName}</span>
+                    )}
                 </h1>
                 <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem" }}>Stay organized with tasks, your way.</p>
             </div>

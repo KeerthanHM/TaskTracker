@@ -105,6 +105,30 @@ export async function inviteMember(workspaceId: string, email: string) {
     revalidatePath(`/?workspaceId=${workspaceId}`)
 }
 
+export async function renameWorkspace(workspaceId: string, name: string) {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    const trimmed = name.trim()
+    if (!trimmed) throw new Error("Workspace name cannot be empty")
+
+    // Ensure user is the OWNER
+    const membership = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId: session.user.id } }
+    })
+
+    if (!membership || membership.role !== "OWNER") {
+        throw new Error("Only the workspace owner can rename it.")
+    }
+
+    await prisma.workspace.update({
+        where: { id: workspaceId },
+        data: { name: trimmed }
+    })
+
+    revalidatePath("/")
+}
+
 export async function deleteWorkspace(workspaceId: string) {
     const session = await auth()
     if (!session?.user?.id) throw new Error("Unauthorized")
