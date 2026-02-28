@@ -103,6 +103,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
       <main className="main-content">
         {workspace ? (
           <TaskTableClient
+            key={workspace.id}
             workspace={workspace}
             tasks={workspace.tasks}
             members={workspace.members.map((m: any) => m.user)}
